@@ -443,27 +443,6 @@ function initApp() {
   if (series.length > 0) renderRow('Series de la Jungla 🏎️', series);
 }
 
-function renderChannels() {
-  const container = document.getElementById('main-channels');
-  // Se filtran los que tengan tipo 'live' O que tengan un embed manual y no tengan tmdbId (canales)
-  const liveChannels = [...movieDatabase.trending].filter(c => c.type === 'live' || (c.embed && !c.tmdbId));
-
-  if (liveChannels.length === 0) {
-    container.innerHTML = '<p style="color: var(--text-muted); padding: 50px;">Buscando señal... 📡</p>';
-    return;
-  }
-
-  container.innerHTML = liveChannels.map(ch => `
-    <div class="tv-card" onclick="window.handleChannelClick('${ch.embed}')">
-      <img src="${ch.img}" alt="${ch.title}" onerror="this.src='https://via.placeholder.com/600x400?text=SIN+SEÑAL'">
-      <div class="tv-info">
-        <h3 style="font-size: 0.95rem;">${ch.title}</h3>
-        <p style="font-size: 0.7rem; color: var(--primary);">• EN VIVO</p>
-      </div>
-    </div>
-  `).join('');
-}
-
 // Initial Setup
 document.addEventListener('DOMContentLoaded', () => {
   handleRouting();
