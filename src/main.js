@@ -200,14 +200,15 @@ function updateServer(serverKey) {
 
   let url = "";
   switch (serverKey) {
-    case 'vidsrc': url = `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`; break;
+    case 'vidsrc': url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`; break;
     case 'superembed': url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`; break;
     case '2embed': url = `https://www.2embed.cc/embed/${tmdbId}`; break;
-    default: url = `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`;
+    default: url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
   }
 
   iframe.src = url;
-  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
+  // Permitir reproduccion retirando restricciones estrictas que rompen algunos servidores
+  iframe.removeAttribute('sandbox');
 
   iframe.onload = () => {
     setTimeout(() => {
