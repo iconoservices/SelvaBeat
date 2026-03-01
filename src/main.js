@@ -210,8 +210,8 @@ async function searchTMDB(query) {
       const movie = await res.json();
       data = { results: [movie] };
     } else {
-      // Búsqueda normal por nombre
-      const res = await fetch(`${TMDB_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=es-ES`);
+      // Búsqueda multi (Películas y Series)
+      const res = await fetch(`${TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=es-ES`);
       if (!res.ok) throw new Error("Error en API");
       data = await res.json();
     }
@@ -221,24 +221,39 @@ async function searchTMDB(query) {
       return;
     }
 
-    resultsDiv.innerHTML = data.results.slice(0, 5).map(m => `
-      <div class="tmdb-item" onclick="window.selectTMDBMovie(${JSON.stringify(m).replace(/"/g, '&quot;')})">
-        <img src="${TMDB_IMG_URL + m.poster_path}" alt="${m.title}" onerror="this.src='https://via.placeholder.com/150x225'">
-        <p>${m.title}</p>
-      </div>
-    `).join('');
+    resultsDiv.innerHTML = data.results.slice(0, 5).map(m => {
+      const title = m.title || m.name || "Sin Título";
+      const date = m.release_date || m.first_air_date || "2024-01-01";
+      const type = m.media_type === 'tv' ? 'series' : 'movie';
+      return `
+        <div class="tmdb-item" onclick="window.selectTMDBMovie(${JSON.stringify(m).replace(/"/g, '&quot;')})">
+          <img src="${TMDB_IMG_URL + m.poster_path}" alt="${title}" onerror="this.src='https://via.placeholder.com/150x225'">
+          <p style="font-size:0.7rem;">[${type === 'series' ? 'Serie' : 'Peli'}]</p>
+          <p>${title}</p>
+        </div>
+      `;
+    }).join('');
   } catch (err) {
     resultsDiv.innerHTML = '<p style="color: #E74C3C;">Error al conectar con TMDB (Revisa el ID) 🐒</p>';
   }
 }
 
 window.selectTMDBMovie = (m) => {
-  document.getElementById('m-title').value = m.title;
+  const title = m.title || m.name;
+  const date = m.release_date || m.first_air_date || "2024";
+  const type = m.media_type === 'tv' ? 'series' : 'movie';
+
+  document.getElementById('m-title').value = title;
   document.getElementById('m-img').value = TMDB_IMG_URL + m.poster_path;
   document.getElementById('m-tmdb-id').value = m.id;
-  document.getElementById('m-meta').value = `${m.release_date.split('-')[0]} / ${m.vote_average}`;
-  document.getElementById('m-embed').value = ""; // Clear manual embed to use auto multi-server
-  alert(`Cosechada info de: ${m.title} 🥥🍹`);
+  document.getElementById('m-type').value = type;
+  document.getElementById('m-meta').value = `${date.split('-')[0]} / ${m.vote_average || '8.0'}`;
+  document.getElementById('m-embed').value = "";
+
+  const preview = document.getElementById('m-img-preview');
+  if (preview) preview.src = TMDB_IMG_URL + m.poster_path;
+
+  alert(`Cosechada info de: ${title} 🥥🍹`);
 };
 
 // --- DATA & ADS SYSTEM ---
@@ -299,7 +314,7 @@ function openPlayer(movieId) {
   startAdCountdown(() => {
     if (movie.tmdbId) {
       document.getElementById('server-switcher').style.display = 'flex';
-      updateServer('vidsrc', true); // true para saltarse el countdown interno si ya paso el de openPlayer
+      updateServer('vidsrc'); // Se quitó el argumento 'true' innecesario
     } else {
       document.getElementById('server-switcher').style.display = 'none';
       document.getElementById('player-iframe').src = movie.embed || "";
@@ -348,9 +363,9 @@ function updateServer(serverKey) {
     }
 
     iframe.src = url;
-    // Agregamos permisos de popups para que los servidores no bloqueen el video.
-    // El navegador (especialmente Brave) igual se encargará de bloquear los anuncios molestos.
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox');
+    // Máxima compatibilidad: Agregamos modals y top-navigation para servidores que lo requieren.
+    // Navegadores como Brave seguirán protegiendo al usuario de los redireccionamientos automáticos.
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-modals allow-top-navigation-by-user-activation');
 
     iframe.onload = () => {
       setTimeout(() => {
@@ -427,6 +442,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-tmdb-search').addEventListener('click', () => {
     const query = document.getElementById('tmdb-search-input').value;
     searchTMDB(query);
+  });
+
+  document.getElementById('m-img').addEventListener('input', (e) => {
+    const preview = document.getElementById('m-img-preview');
+    if (preview) {
+      preview.src = e.target.value || 'https://via.placeholder.com/150x220?text=Previsualización';
+    }
   });
 
   // Movie Form Submit (Save to Firebase)

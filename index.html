@@ -114,9 +114,13 @@
                 <input type="text" id="m-tmdb-id" class="form-control" placeholder="ID TMDB" style="width: 100px;">
               </div>
             </div>
-            <div class="form-group">
-              <label>URL de la Imagen (Póster)</label>
-              <input type="url" id="m-img" class="form-control" placeholder="https://..." required>
+            <div class="form-group" style="display: flex; gap: 15px; align-items: start;">
+              <div style="flex: 1;">
+                <label>URL de la Imagen (Póster)</label>
+                <input type="url" id="m-img" class="form-control" placeholder="https://..." required>
+              </div>
+              <img id="m-img-preview" src="https://via.placeholder.com/100x150?text=Prev"
+                style="width: 70px; border-radius: 8px; border: 1px solid var(--glass-border);">
             </div>
             <div class="form-group">
               <label>URL del Video (Embed / M3U8)</label>
