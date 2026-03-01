@@ -271,9 +271,139 @@ h3,
 }
 
 .movie-card:hover {
-  transform: scale(1.05);
+  transform: scale(1.08) translateY(-10px);
   border-color: var(--primary);
-  z-index: 10;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-glow);
+  z-index: 100;
+}
+
+/* Maintenance Badge */
+.badge-maintenance {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #e74c3c;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  z-index: 5;
+  box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-maintenance::before {
+  content: "🛠️";
+}
+
+/* Admin Panel */
+.admin-section {
+  padding: 120px 5% 40px;
+  display: none;
+  /* Hidden by default */
+  animation: fadeIn 0.5s ease;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 40px;
+}
+
+.admin-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  padding: 30px;
+  backdrop-filter: blur(10px);
+}
+
+.admin-title {
+  margin-bottom: 25px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: white;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.admin-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+
+.btn-edit {
+  background: var(--secondary);
+  color: white;
+  margin-right: 5px;
+}
+
+.btn-delete {
+  background: #e74c3c;
+  color: white;
+}
+
+.action-btn:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .card-img {

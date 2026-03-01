@@ -1,26 +1,38 @@
 import './style.css'
 
-const movieDatabase = {
+// Initial state with some sample movies
+let movieDatabase = JSON.parse(localStorage.getItem('selvaflix_db')) || {
   trending: [
-    { id: 1, title: 'Cocona Fugitiva', year: 2024, rating: '4.8', img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-    { id: 2, title: 'Selva de Cristal', year: 2023, rating: '4.5', img: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-    { id: 3, title: 'El Despertar Tropical', year: 2024, rating: '4.9', img: 'https://images.unsplash.com/photo-1501854140801-50d01674aa3e?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-    { id: 4, title: 'Operación Amazonas', year: 2022, rating: '4.2', img: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-    { id: 5, title: 'Secretos del Jaguar', year: 2024, rating: '4.7', img: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+    { id: 1, title: 'Cocona Fugitiva', year: 2024, rating: '4.8', img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ', status: 'healthy' },
+    { id: 2, title: 'Selva de Cristal', year: 2023, rating: '4.5', img: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ', status: 'healthy' },
+    { id: 3, title: 'El Despertar Tropical', year: 2024, rating: '4.9', img: 'https://images.unsplash.com/photo-1501854140801-50d01674aa3e?auto=format&fit=crop&q=80&w=500', embed: 'https://www.youtube.com/embed/dQw4w9WgXcQ', status: 'maintenance' },
   ],
-  series: [
-    { id: 101, title: 'Crónicas de la Hoja', seasons: 3, img: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&q=80&w=500' },
-    { id: 102, title: 'Reyes del Manguaré', seasons: 1, img: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&q=80&w=500' },
-    { id: 103, title: 'Bajo el Sol', seasons: 5, img: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&q=80&w=500' },
-  ],
-  live: [
-    { id: 201, title: 'Selva Sports 24/7', active: true, img: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=500' },
-    { id: 202, title: 'Nature Channel HD', active: true, img: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=500' },
-  ]
+  series: [],
+  live: []
 };
 
+// Routing Logic
+function handleRouting() {
+  const hash = window.location.hash;
+  const homeView = document.getElementById('home-view');
+  const adminView = document.getElementById('admin-view');
+
+  if (hash === '#admin') {
+    homeView.style.display = 'none';
+    adminView.style.display = 'block';
+    renderInventory();
+  } else {
+    homeView.style.display = 'block';
+    adminView.style.display = 'none';
+    initApp(); // Re-render home with updated data
+  }
+}
+
+// Render Movie Rows
 function renderRow(title, data) {
   const container = document.getElementById('main-content');
+  if (!data || data.length === 0) return;
+
   const rowHtml = `
     <section class="category-row">
       <div class="row-header">
@@ -28,11 +40,12 @@ function renderRow(title, data) {
       </div>
       <div class="movie-list">
         ${data.map(item => `
-          <div class="movie-card" data-id="${item.id}" data-type="${item.seasons ? 'series' : 'movie'}" data-embed="${item.embed || ''}">
+          <div class="movie-card" data-id="${item.id}" data-embed="${item.embed || ''}">
+            ${item.status === 'maintenance' ? '<div class="badge-maintenance">Mantenimiento</div>' : ''}
             <img src="${item.img}" alt="${item.title}" class="card-img" loading="lazy">
             <div class="card-info">
               <h3 class="card-title">${item.title}</h3>
-              <p class="card-meta">${item.year || (item.seasons + ' Temporadas') || 'EN VIVO'} • ★ ${item.rating || 'TOP'}</p>
+              <p class="card-meta">${item.year || 'Estreno'} • ★ ${item.rating || '4.5'}</p>
             </div>
           </div>
         `).join('')}
@@ -42,7 +55,46 @@ function renderRow(title, data) {
   container.insertAdjacentHTML('beforeend', rowHtml);
 }
 
-// Player Handling
+// Admin: Render Inventory
+function renderInventory() {
+  const list = document.getElementById('inventory-list');
+  const allMovies = [...movieDatabase.trending, ...movieDatabase.series, ...movieDatabase.live];
+
+  list.innerHTML = allMovies.map(m => `
+    <tr>
+      <td>${m.title}</td>
+      <td>
+        <span style="color: ${m.status === 'healthy' ? '#2ECC71' : '#E74C3C'}">
+          ${m.status === 'healthy' ? '● Activo' : '● Mantenimiento'}
+        </span>
+      </td>
+      <td>
+        <button class="action-btn btn-edit" onclick="window.editMovie(${m.id})">Editar</button>
+        <button class="action-btn btn-delete" onclick="window.deleteMovie(${m.id})">Borrar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// Public API for Admin Actions
+window.deleteMovie = (id) => {
+  movieDatabase.trending = movieDatabase.trending.filter(m => m.id !== id);
+  localStorage.setItem('selvaflix_db', JSON.stringify(movieDatabase));
+  renderInventory();
+};
+
+window.editMovie = (id) => {
+  const movie = movieDatabase.trending.find(m => m.id === id);
+  if (movie) {
+    document.getElementById('m-title').value = movie.title;
+    document.getElementById('m-img').value = movie.img;
+    document.getElementById('m-embed').value = movie.embed;
+    document.getElementById('m-meta').value = movie.year;
+    // We could add an update mode here, for now it just fills the form
+  }
+};
+
+// Player Logic
 function openPlayer(embedUrl) {
   const modal = document.getElementById('player-modal');
   const iframe = document.getElementById('player-iframe');
@@ -57,15 +109,14 @@ function openPlayer(embedUrl) {
   loader.style.opacity = '1';
   loader.style.display = 'flex';
 
-  // The Sandbox Shield: No popups, no forms, just essence
   iframe.src = embedUrl;
-  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
 
   iframe.onload = () => {
     setTimeout(() => {
       loader.style.opacity = '0';
       setTimeout(() => loader.style.display = 'none', 800);
-    }, 1500); // Give it some time for the effect
+    }, 1500);
   };
 }
 
@@ -73,37 +124,65 @@ function closePlayer() {
   const modal = document.getElementById('player-modal');
   const iframe = document.getElementById('player-iframe');
   modal.style.display = 'none';
-  iframe.src = ''; // Stop video
+  iframe.src = '';
+}
+
+// Bot Centinela: Simple Link Checker Simulation
+async function checkLinks() {
+  console.log('🤖 Bot Centinela iniciando escaneo...');
+  movieDatabase.trending.forEach(m => {
+    // Simulated check: if embed contains 'dQw4w9WgXcQ' (sample), it's healthy
+    // In a real app, we would try a fetch or use a proxy
+    if (!m.embed) m.status = 'maintenance';
+  });
+  localStorage.setItem('selvaflix_db', JSON.stringify(movieDatabase));
 }
 
 function initApp() {
-  const heroTitle = document.getElementById('hero-title');
-  const heroDesc = document.getElementById('hero-desc');
-
-  heroTitle.innerText = "Cocona Fugitiva";
-  heroDesc.innerText = "Una aventura salvaje a traves del Amazonas que cambiara todo lo que creias saber sobre la selva.";
+  const container = document.getElementById('main-content');
+  container.innerHTML = ''; // Clear previous
 
   renderRow('Recien Cosechadas', movieDatabase.trending);
-  renderRow('Series del Momento', movieDatabase.series);
-  renderRow('En Vivo en la Selva', movieDatabase.live);
 
-  // Event Listeners
+  // Title fix
+  document.getElementById('hero-title').style.display = 'block';
+  document.getElementById('hero-title').innerText = "Cocona Fugitiva";
+}
+
+// Initial Setup
+document.addEventListener('DOMContentLoaded', () => {
+  handleRouting();
+  window.addEventListener('hashchange', handleRouting);
+
+  // Movie Form Submit
+  document.getElementById('movie-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const newMovie = {
+      id: Date.now(),
+      title: document.getElementById('m-title').value,
+      img: document.getElementById('m-img').value,
+      embed: document.getElementById('m-embed').value,
+      year: document.getElementById('m-meta').value,
+      status: 'healthy'
+    };
+    movieDatabase.trending.unshift(newMovie);
+    localStorage.setItem('selvaflix_db', JSON.stringify(movieDatabase));
+    e.target.reset();
+    renderInventory();
+    alert('¡Pelicula Guardada con éxito! 🌴🍿');
+  });
+
+  // Global Clicks
   document.addEventListener('click', (e) => {
     const card = e.target.closest('.movie-card');
-    if (card) {
-      const embed = card.getAttribute('data-embed');
-      openPlayer(embed);
-    }
+    if (card) openPlayer(card.getAttribute('data-embed'));
 
     if (e.target.id === 'close-player' || e.target.classList.contains('player-modal')) {
       closePlayer();
     }
   });
 
-  // Hero Play Button
-  document.querySelector('.btn-primary').addEventListener('click', () => {
-    openPlayer('https://www.youtube.com/embed/dQw4w9WgXcQ'); // Sample trailer
-  });
-}
-
-document.addEventListener('DOMContentLoaded', initApp);
+  // Run Bot Centinela every 10 mins (simulated)
+  setInterval(checkLinks, 600000);
+  checkLinks();
+});
