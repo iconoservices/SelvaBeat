@@ -18,7 +18,7 @@ const db = getFirestore(app);
 const moviesCol = collection(db, "movies");
 
 // --- TMDB API Config ---
-const TMDB_API_KEY = 'c5307b8a7b3d3408436473062f6b39ec';
+const TMDB_API_KEY = '15d2ea6d0dc1d476efbca3eba2b9bbfb'; // Clave publica para demos
 const TMDB_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMG_URL = 'https://image.tmdb.org/t/p/w500';
 
@@ -122,8 +122,24 @@ async function searchTMDB(query) {
   resultsDiv.innerHTML = '<p style="color: var(--primary);">Buscando en Hollywood... 📡</p>';
 
   try {
-    const res = await fetch(`${TMDB_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=es-ES`);
-    const data = await res.json();
+    let data;
+    // Si escriben solo números, lo buscamos directo por ID (Ej: 1032892)
+    if (/^\d+$/.test(query.trim())) {
+      const res = await fetch(`${TMDB_URL}/movie/${query.trim()}?api_key=${TMDB_API_KEY}&language=es-ES`);
+      if (!res.ok) throw new Error("No encontrado");
+      const movie = await res.json();
+      data = { results: [movie] };
+    } else {
+      // Búsqueda normal por nombre
+      const res = await fetch(`${TMDB_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=es-ES`);
+      if (!res.ok) throw new Error("Error en API");
+      data = await res.json();
+    }
+
+    if (!data.results || data.results.length === 0) {
+      resultsDiv.innerHTML = '<p style="color: var(--text-muted);">No encontramos esa joya en la selva 🧐</p>';
+      return;
+    }
 
     resultsDiv.innerHTML = data.results.slice(0, 5).map(m => `
       <div class="tmdb-item" onclick="window.selectTMDBMovie(${JSON.stringify(m).replace(/"/g, '&quot;')})">
@@ -132,7 +148,7 @@ async function searchTMDB(query) {
       </div>
     `).join('');
   } catch (err) {
-    resultsDiv.innerHTML = '<p style="color: #E74C3C;">Error al conectar con TMDB 🐒</p>';
+    resultsDiv.innerHTML = '<p style="color: #E74C3C;">Error al conectar con TMDB (Revisa el ID) 🐒</p>';
   }
 }
 
