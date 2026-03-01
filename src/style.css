@@ -20,11 +20,14 @@
   -webkit-font-smoothing: antialiased;
 }
 
+html,
 body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
   background-color: var(--bg-deep);
   color: var(--text-main);
   font-family: 'Inter', sans-serif;
-  overflow-x: hidden;
   min-height: 100vh;
 }
 
@@ -62,7 +65,6 @@ h3,
   min-height: 100vh;
 }
 
-/* Navbar */
 .navbar {
   position: fixed;
   top: 0;
@@ -94,6 +96,22 @@ h3,
 .logo span:last-child {
   color: var(--primary);
   position: relative;
+}
+
+#hero-section {
+  transition: opacity 0.5s ease-in-out, background-image 0.5s ease-in-out;
+}
+
+/* Checkbox Styling */
+.coco-check {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.admin-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .nav-links {

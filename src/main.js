@@ -195,7 +195,7 @@ function _renderInventoryRows(items) {
   };
 
   if (items.length === 0) {
-    list.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-muted);">No se encontraron coconas con ese filtro... 🍃</td></tr>';
+    list.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">No se encontraron coconas con ese filtro... 🍃</td></tr>';
     return;
   }
 
@@ -204,6 +204,7 @@ function _renderInventoryRows(items) {
     const meta = typeMaps[m.type] || typeMaps.movie;
     return `
       <tr style="${isBroken ? 'background: rgba(231, 76, 60, 0.05);' : ''}">
+        <td><input type="checkbox" class="coco-check" data-id="${m.id}"></td>
         <td>
           <div style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.6rem; text-align: center;">
             ${meta.e} ${meta.t}
@@ -214,7 +215,6 @@ function _renderInventoryRows(items) {
             <img src="${m.img}" 
                  style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px; ${isBroken ? 'border: 2px solid #E74C3C;' : ''}" 
                  onerror="this.src='https://via.placeholder.com/40x60?text=ER'; window.markAsBroken('${m.id}')">
-            ${isBroken ? '<span style="position:absolute;top:-5px;right:-5px;background:#E74C3C;width:12px;height:12px;border-radius:50%;border:2px solid white;"></span>' : ''}
           </div>
           <span style="${isBroken ? 'color: #E74C3C; font-weight: bold;' : ''}">${m.title}</span>
         </td>
@@ -281,9 +281,21 @@ window.bulkDeleteCurrentFilter = async () => {
   alert(`¡Limpieza completada! Se fueron ${toDelete.length} intrusos.`);
 };
 
-window.filterInventory = (query) => {
-  const category = document.getElementById('inventory-filter').value;
-  window.filterInventoryByCategory(category);
+window.deleteSelectedCoconas = async () => {
+  const selected = document.querySelectorAll('.coco-check:checked');
+  if (selected.length === 0) { alert("¡Primero selecciona qué quieres borrar! 🐒"); return; }
+
+  if (!confirm(`¿Seguro que quieres borrar ${selected.length} coconas? Esta acción no se deshace. 🗑️🦁`)) return;
+
+  for (const check of selected) {
+    const id = check.dataset.id;
+    await deleteDoc(doc(db, "movies", id));
+  }
+  alert(`¡Limpieza total! Se eliminaron ${selected.length} elementos.`);
+};
+
+window.selectAllCoconas = (checked) => {
+  document.querySelectorAll('.coco-check').forEach(c => c.checked = checked);
 };
 
 // TMDB Search Integration
@@ -719,6 +731,35 @@ window.massSeedMovies = async () => {
   }
 };
 
+let heroTimer = null;
+let heroPool = [];
+let currentHeroIndex = 0;
+
+function updateHeroCarousel() {
+  if (heroPool.length === 0) return;
+  const item = heroPool[currentHeroIndex];
+  const section = document.getElementById('hero-section');
+  const title = document.getElementById('hero-title');
+  const sub = document.getElementById('hero-subtitle');
+  const btn = document.getElementById('hero-play-btn');
+
+  if (!section || !title || !sub || !btn) return;
+
+  // Transición suave
+  section.style.transition = 'opacity 0.4s ease';
+  section.style.opacity = '0.5';
+
+  setTimeout(() => {
+    title.innerText = item.title;
+    sub.innerText = `${item.year || '2024'} • ⭐ ${item.rating || '4.8'}`;
+    section.style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.95), transparent), url(${item.img})`;
+    btn.onclick = () => openPlayer(item.id);
+    section.style.opacity = '1';
+  }, 400);
+
+  currentHeroIndex = (currentHeroIndex + 1) % heroPool.length;
+}
+
 function initApp() {
   const container = document.getElementById('main-content');
   container.innerHTML = '';
@@ -731,24 +772,22 @@ function initApp() {
     return (b.createdAt || 0) - (a.createdAt || 0);
   });
 
-  // Pool de Recomendados (Hero)
-  const poolHero = allContent
+  // Pool de Recomendados (Hero Carousel - 3 items)
+  heroPool = allContent
     .filter(c => (c.type === 'movie' || !c.type) && !window._brokenIds.has(c.id))
-    .slice(0, 5);
+    .slice(0, 3);
 
-  const randomFeatured = poolHero[Math.floor(Math.random() * poolHero.length)] || allContent[0];
+  if (heroPool.length > 0) {
+    currentHeroIndex = 0;
+    updateHeroCarousel();
+    if (heroTimer) clearInterval(heroTimer);
+    heroTimer = setInterval(updateHeroCarousel, 5000); // Cambio cada 5 segundos
+  }
+
   const releases = allContent.slice(0, 20);
   const movies = allContent.filter(c => c.type === 'movie' || !c.type).slice(0, 50);
   const series = allContent.filter(c => c.type === 'series' || c.type === 'tv').slice(0, 50);
   const anime = allContent.filter(c => c.type === 'anime' || c.title.toLowerCase().includes('anime')).slice(0, 30);
-
-  // Hero Update
-  if (randomFeatured) {
-    document.getElementById('hero-title').innerText = randomFeatured.title;
-    document.getElementById('hero-subtitle').innerText = `${randomFeatured.year || '2024'} • ⭐ ${randomFeatured.rating || '4.8'}`;
-    document.getElementById('hero-section').style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.95), transparent), url(${randomFeatured.img})`;
-    document.getElementById('hero-play-btn').onclick = () => openPlayer(randomFeatured.id);
-  }
 
   // Rows Estilo Netflix
   if (releases.length > 0) renderRow('Lo más nuevo en SelvaFlix ✨', releases);
@@ -841,6 +880,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.classList.contains('server-btn')) {
       updateServer(e.target.dataset.server);
     }
+  });
+
+  document.getElementById('close-player').addEventListener('click', () => {
+    const modal = document.getElementById('player-modal');
+    const iframe = document.getElementById('player-iframe');
+    modal.style.display = 'none';
+    iframe.src = ""; // Detener audio/video al cerrar
   });
 
   document.getElementById('skip-ad-btn').addEventListener('click', () => {

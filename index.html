@@ -198,9 +198,14 @@
             </button>
           </div>
           <p id="inventory-status" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px;"></p>
+          <button id="btn-delete-selected" class="btn" onclick="window.deleteSelectedCoconas()"
+            style="background: #E67E22; color: white; border: none; font-size: 0.7rem; padding: 5px 15px; border-radius: 4px; margin-bottom: 10px; font-weight: bold;">
+            🗑️ Borrar Seleccionados
+          </button>
           <table class="admin-table">
             <thead>
               <tr>
+                <th style="width: 30px;"><input type="checkbox" onclick="window.selectAllCoconas(this.checked)"></th>
                 <th>Tipo</th>
                 <th>Titulo</th>
                 <th>Estado</th>
@@ -277,16 +282,53 @@
           style="display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 30px; border: 1px solid var(--glass-border);">
           <div style="display: flex; align-items: center; gap: 5px;">
             <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: bold;">TEMP:</span>
-            <input type="number" id="series-season" value="1" min="1"
-              style="width: 45px; background: none; border: none; color: white; font-weight: bold; font-size: 0.9rem; text-align: center;"
+            <select id="series-season"
+              style="background: none; border: none; color: white; font-weight: bold; font-size: 0.9rem;"
               onchange="window.changeEpisode()">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
           </div>
           <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
           <div style="display: flex; align-items: center; gap: 5px;">
             <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: bold;">CAP:</span>
-            <input type="number" id="series-episode" value="1" min="1"
-              style="width: 45px; background: none; border: none; color: white; font-weight: bold; font-size: 0.9rem; text-align: center;"
+            <select id="series-episode"
+              style="background: none; border: none; color: white; font-weight: bold; font-size: 0.9rem;"
               onchange="window.changeEpisode()">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+              <option value="13">13</option>
+              <option value="14">14</option>
+              <option value="15">15</option>
+              <option value="16">16</option>
+              <option value="17">17</option>
+              <option value="18">18</option>
+              <option value="19">19</option>
+              <option value="20">20</option>
+              <option value="21">21</option>
+              <option value="22">22</option>
+              <option value="23">23</option>
+              <option value="24">24</option>
+              <option value="25">25</option>
+            </select>
           </div>
         </div>
 
@@ -317,7 +359,7 @@
       <a href="#" class="nav-item" onclick="window.location.hash='live'">🔴</a>
     </nav>
   </div>
-  <script type="module" src="/src/main.js?v=2.0"></script>
+  <script type="module" src="/src/main.js?v=2.1"></script>
 </body>
 
 </html>
