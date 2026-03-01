@@ -38,17 +38,7 @@
     </div>
 
     <main id="home-view">
-      <section class="hero" id="hero-section">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <h1 class="hero-title" id="hero-title">Cargando la Selva...</h1>
-          <p class="hero-description" id="hero-subtitle">Descubre las historias mas jugosas del cine tropical.</p>
-          <div class="hero-btns">
-            <button class="btn btn-primary" id="hero-play-btn">Reproducir</button>
-            <button class="btn btn-secondary">Mas Información</button>
-          </div>
-        </div>
-      </section>
+      <section class="hero-banners" id="hero-section" style="display: none;"></section>
 
       <div class="content-sections" id="main-content">
         <!-- Rows will be injected here -->
@@ -114,13 +104,19 @@
                 <!-- Opciones añadidas por JS -->
               </select>
               <select id="discover-genre" class="form-control" style="flex: 1; font-size: 0.75rem;">
-                <option value="">Cualquier Género</option>
+                <option value="">🔥 Lo Más Visto / Todos</option>
                 <option value="28">Acción</option>
                 <option value="16">Animación</option>
                 <option value="35">Comedia</option>
                 <option value="27">Terror</option>
                 <option value="10749">Romance</option>
                 <option value="878">Sci-Fi</option>
+              </select>
+              <select id="discover-lang" class="form-control" style="flex: 1; font-size: 0.75rem;">
+                <option value="es-MX">Latino (es-MX)</option>
+                <option value="es-PE">Perú (es-PE)</option>
+                <option value="es-ES">España (es-ES)</option>
+                <option value="en-US">Inglés (US)</option>
               </select>
             </div>
             <div id="discover-container"
@@ -132,6 +128,10 @@
                 style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 400px; overflow-y: auto;">
                 <!-- Results injected here -->
               </div>
+              <button id="btn-confirm-mass-seed" class="btn"
+                style="display: none; width: 100%; background: #2ECC71; color: white; margin-top: 15px; font-weight: bold; border: none; padding: 12px; border-radius: 8px; box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);">
+                ✅ ¡Sembrar Seleccionadas! 🚜🌴
+              </button>
             </div>
           </div>
 
@@ -215,6 +215,14 @@
               <option value="broken">🔴 Con Errores</option>
               <option value="missing">🟠 Sin ID TMDB</option>
             </select>
+            <select id="inventory-lang-filter" class="form-control" onchange="window.filterInventoryByCategory()"
+              style="flex: 1;">
+              <option value="all">Idioma: Todos</option>
+              <option value="es-MX">Latino</option>
+              <option value="es-PE">Perú</option>
+              <option value="es-ES">España</option>
+              <option value="en-US">Inglés</option>
+            </select>
             <button id="btn-bulk-delete" class="btn" onclick="window.bulkDeleteCurrentFilter()"
               style="display: none; background: #E74C3C; color: white; border: none; font-size: 0.75rem; padding: 10px; flex: 1; font-weight: bold;">
               🗑️ Borrar Errores
@@ -231,6 +239,7 @@
                 <th style="width: 30px;"><input type="checkbox" onclick="window.selectAllCoconas(this.checked)"></th>
                 <th>Tipo</th>
                 <th>Titulo</th>
+                <th>Idioma</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -243,6 +252,78 @@
       </div>
 
     </section>
+
+    <!-- Warning Alert with "Survival Guide" Design (Image Match) -->
+    <div id="ad-overlay"
+      style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10001; align-items: center; justify-content: center; padding: 20px;">
+      <div
+        style="text-align: center; width: 100%; max-width: 400px; padding: 50px 30px; background: #131313; border: 1px solid #333; border-radius: 40px; box-shadow: 0 40px 100px rgba(0,0,0,1); position: relative;">
+
+        <!-- Survival Badge -->
+        <div
+          style="position: absolute; top: 15px; left: 30px; background: #FF7A00; color: #000; padding: 8px 18px; border-radius: 12px; font-weight: 900; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 5px 20px rgba(255,122,0,0.3); font-family: 'Outfit'; z-index: 10002;">
+          CONSEJO DE SUPERVIVENCIA 🧐
+        </div>
+
+        <h2
+          style="color: #FF7A00; margin: 40px 0 10px; font-size: 2.2rem; font-family: 'Outfit'; font-weight: 800; letter-spacing: -1.5px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+          ¡Guía del Explorador! <span style="font-size: 1.8rem;">🥥</span>
+        </h2>
+
+        <p
+          style="color: white; line-height: 1.4; margin-bottom: 30px; font-size: 1.1rem; font-weight: 500; opacity: 0.95;">
+          Los servidores gratuitos pueden abrir<br>
+          <span style="color: white; font-weight: 800; font-size: 1.2rem;">ventanas nuevas al dar Play.</span>
+        </p>
+
+        <!-- Instructions Box (Dotted Style) -->
+        <div
+          style="background: rgba(255,122,0,0.03); border: 2.5px dashed #D35400; border-radius: 28px; padding: 30px; margin-bottom: 40px; text-align: left;">
+          <h3
+            style="color: white; font-size: 1.3rem; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; font-family: 'Outfit'; font-weight: 700;">
+            🔥 ¿Qué hacer?
+          </h3>
+          <ul style="color: #bbb; padding-left: 0; margin: 0; list-style: none;">
+            <li
+              style="margin-bottom: 18px; position: relative; display: flex; gap: 12px; line-height: 1.5; font-size: 1rem;">
+              <span style="color: #666; font-size: 1.5rem; line-height: 1; margin-top: -3px;">•</span> <span>Si se abre
+                otra pestaña, <b style="color: white;">ciérrala</b> y vuelve aquí.</span>
+            </li>
+            <li
+              style="margin-bottom: 18px; position: relative; display: flex; gap: 12px; line-height: 1.5; font-size: 1rem;">
+              <span style="color: #666; font-size: 1.5rem; line-height: 1; margin-top: -3px;">•</span> <span>Dale "Play"
+                de nuevo. (A veces toma 2 intentos).</span>
+            </li>
+            <li style="position: relative; display: flex; gap: 12px; line-height: 1.5; font-size: 1rem;">
+              <span style="color: #666; font-size: 1.5rem; line-height: 1; margin-top: -3px;">•</span> <span>¡Usa <b
+                  style="color: white;">Brave Browser</b> para saltarte todo esto!</span>
+            </li>
+          </ul>
+        </div>
+
+        <button id="skip-ad-btn" class="btn"
+          style="width: 100%; background: #FF7A00; color: white; border: none; padding: 22px; border-radius: 22px; cursor: not-allowed; font-size: 1.5rem; font-weight: 900; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 15px 40px rgba(255,122,0,0.4); font-family: 'Outfit';"
+          disabled>
+          Cerrando en 5...
+        </button>
+      </div>
+    </div>
+
+    <!-- Bulk Action Progress Bar (Admin) -->
+    <div id="delete-progress-overlay"
+      style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10002; align-items: center; justify-content: center; flex-direction: column;">
+      <div
+        style="width: 300px; background: #111; padding: 30px; border-radius: 15px; border: 1px solid var(--glass-border); text-align: center;">
+        <p id="progress-text" style="color: white; margin-bottom: 20px; font-weight: bold;">Eliminando Coconas... 🐒🔥
+        </p>
+        <div
+          style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden;">
+          <div id="progress-bar-fill"
+            style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease;"></div>
+        </div>
+        <p id="progress-percent" style="color: var(--primary); margin-top: 10px; font-size: 0.8rem;">0%</p>
+      </div>
+    </div>
 
     <!-- Premium Player Modal -->
     <div id="player-modal" class="player-modal">

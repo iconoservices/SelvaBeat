@@ -26,6 +26,9 @@ const TMDB_IMG_URL = 'https://image.tmdb.org/t/p/w500';
 
 let movieDatabase = { trending: [] };
 let currentPlayerMovie = null;
+window._brokenIds = new Set();
+window._hasSeenWarning = false;
+let pendingSeeds = [];
 
 // Firebase Listener (Real-time sync)
 const yearSelect = document.getElementById('discover-year');
@@ -39,12 +42,7 @@ if (yearSelect || mYearSelect) {
 }
 onSnapshot(moviesCol, (snapshot) => {
   movieDatabase.trending = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  const hash = window.location.hash.replace('#', '');
-  if (hash === 'admin') renderInventory();
-  else if (hash === 'live') renderChannels();
-  else if (hash === 'movies') renderMoviesView();
-  else if (hash === 'series') renderSeriesView();
-  else initApp();
+  handleRouting();
 });
 
 
@@ -146,7 +144,7 @@ function _renderCardsInto(container, data) {
 
 function renderRow(title, data) {
   const container = document.getElementById('main-content');
-  if (!data || data.length === 0) return;
+  if (!data) return;
   const section = document.createElement('section');
   section.className = 'category-row';
   section.innerHTML = `
@@ -212,6 +210,11 @@ function _renderInventoryRows(items) {
           <span style="${isBroken ? 'color: #E74C3C; font-weight: bold;' : ''}">${m.title}</span>
         </td>
         <td>
+          <span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+            ${m.lang === 'es-MX' ? '🇲🇽 Latino' : m.lang === 'en-US' ? '🇺🇸 Inglés' : m.lang === 'es-ES' ? '🇪🇸 España' : m.lang === 'es-PE' ? '🇵🇪 Perú' : '🇲🇽 Latino'}
+          </span>
+        </td>
+        <td>
           <span style="color: ${m.status === 'healthy' ? '#2ECC71' : '#E74C3C'}">
             ${isBroken ? '⚠️ Error Link' : (m.status === 'healthy' ? '● Activo' : '● Mant.')}
           </span>
@@ -237,6 +240,7 @@ window.markAsBroken = (id) => {
 window.filterInventoryByCategory = () => {
   const type = document.getElementById('inventory-type-filter').value;
   const category = document.getElementById('inventory-filter').value;
+  const langFilter = document.getElementById('inventory-lang-filter')?.value || 'all';
   const searchInput = document.getElementById('inventory-search');
   const query = searchInput ? searchInput.value.toLowerCase() : '';
 
@@ -246,10 +250,23 @@ window.filterInventoryByCategory = () => {
     filtered = filtered.filter(m => m.type === type || (type === 'movie' && !m.type));
   }
 
+  if (langFilter !== 'all') {
+    filtered = filtered.filter(m => (m.lang || 'es-MX') === langFilter);
+  }
+
   if (category === 'broken') {
     filtered = filtered.filter(m => window._brokenIds.has(m.id) || !m.img || m.img.includes('placeholder'));
   } else if (category === 'missing') {
     filtered = filtered.filter(m => !m.tmdbId || m.tmdbId === "");
+  }
+
+  // Si hay filtro de category 'broken', ponemos los errores primero, sino que sigan su orden por defecto (fecha o como venga)
+  if (category === 'all') {
+    filtered.sort((a, b) => {
+      const brokenA = window._brokenIds.has(a.id) ? 1 : 0;
+      const brokenB = window._brokenIds.has(b.id) ? 1 : 0;
+      return brokenB - brokenA; // Manda sanos primero
+    });
   }
 
   _renderInventoryRows(filtered);
@@ -285,16 +302,34 @@ window.bulkDeleteCurrentFilter = async () => {
 };
 
 window.deleteSelectedCoconas = async () => {
-  const selected = document.querySelectorAll('.coco-check:checked');
-  if (selected.length === 0) { alert("¡Primero selecciona qué quieres borrar! 🐒"); return; }
+  const selected = Array.from(document.querySelectorAll('.coco-check:checked')).map(cb => cb.dataset.id);
+  if (selected.length === 0) { alert("¡No has seleccionado ninguna cocoña para pelar! 🐒"); return; }
 
-  if (!confirm(`¿Seguro que quieres borrar ${selected.length} coconas? Esta acción no se deshace. 🗑️🦁`)) return;
+  const confirmed = confirm(`¿Estás seguro de que quieres eliminar ${selected.length} elementos para siempre? 🔥`);
+  if (!confirmed) return;
 
-  for (const check of selected) {
-    const id = check.dataset.id;
-    await deleteDoc(doc(db, "movies", id));
+  const overlay = document.getElementById('delete-progress-overlay');
+  const bar = document.getElementById('progress-bar-fill');
+  const text = document.getElementById('progress-percent');
+
+  if (overlay) overlay.style.display = 'flex';
+
+  let count = 0;
+  for (const id of selected) {
+    try {
+      await deleteDoc(doc(db, "movies", id));
+      count++;
+      const percent = Math.round((count / selected.length) * 100);
+      if (bar) bar.style.width = `${percent}%`;
+      if (text) text.innerText = `${percent}% (${count}/${selected.length})`;
+    } catch (e) {
+      console.error("Error eliminando:", id, e);
+    }
   }
-  alert(`¡Limpieza total! Se eliminaron ${selected.length} elementos.`);
+
+  if (overlay) overlay.style.display = 'none';
+  alert(`¡Limpieza completada! ${count} elementos eliminados. 🧹🌴`);
+  if (bar) bar.style.width = "0%";
 };
 
 window.selectAllCoconas = (checked) => {
@@ -397,7 +432,43 @@ function startPlayer(movie) {
   }
 }
 
-async function openPlayer(movieId) {
+function startWarningOverlay(movie) {
+  const adOverlay = document.getElementById('ad-overlay');
+  const skipBtn = document.getElementById('skip-ad-btn');
+
+  // Lógica: Una vez por película/serie al día
+  const today = new Date().toISOString().split('T')[0];
+  const storageKey = `warned_${movie.id}_${today}`;
+
+  if (localStorage.getItem(storageKey)) {
+    startPlayer(movie);
+    return;
+  }
+
+  if (adOverlay) adOverlay.style.display = 'flex';
+
+  let timeLeft = 5;
+  if (skipBtn) {
+    skipBtn.innerText = `Cerrando en ${timeLeft}...`;
+    skipBtn.disabled = true;
+    skipBtn.style.cursor = "not-allowed";
+    skipBtn.style.opacity = "0.7";
+  }
+
+  const timer = setInterval(() => {
+    timeLeft--;
+    if (skipBtn) skipBtn.innerText = `Cerrando en ${timeLeft}...`;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      localStorage.setItem(storageKey, 'true');
+      if (adOverlay) adOverlay.style.display = 'none';
+      startPlayer(movie);
+    }
+  }, 1000);
+}
+
+window.openPlayer = async (movieId) => {
   const allMovies = [...movieDatabase.trending];
   const movie = allMovies.find(m => m.id === movieId);
   if (!movie) return;
@@ -413,7 +484,7 @@ async function openPlayer(movieId) {
   if (nav) nav.style.display = isSeries ? 'flex' : 'none';
   if (isSeries && movie.tmdbId) {
     try {
-      const resp = await fetch(`${TMDB_URL}/tv/${movie.tmdbId}?api_key=${TMDB_API_KEY}&language=es-ES`);
+      const resp = await fetch(`${TMDB_URL}/tv/${movie.tmdbId}?api_key=${TMDB_API_KEY}&language=es-PE`);
       const details = await resp.json();
       const sSel = document.getElementById('series-season');
       const eSel = document.getElementById('series-episode');
@@ -439,7 +510,7 @@ async function openPlayer(movieId) {
     document.getElementById('series-episode').innerHTML = Array.from({ length: 24 }, (_, i) => `<option value="${i + 1}">Capítulo ${i + 1}</option>`).join('');
   }
 
-  startPlayer(movie);
+  startWarningOverlay(movie);
 }
 
 function updateServer(serverKey, season = 1, episode = 1) {
@@ -555,6 +626,22 @@ window.deleteSelectedCoconas = async () => {
   }
 };
 
+window.bulkDeleteCurrentFilter = () => {
+  const type = document.getElementById('inventory-type-filter').value;
+  const category = document.getElementById('inventory-filter').value;
+
+  if (category !== 'broken' && category !== 'missing') {
+    alert("Para usar 'Borrar Errores', primero debes filtrar la Salud por 'Con Errores' o 'Sin ID TMDB'. 🐒");
+    return;
+  }
+
+  // Select all checkboxes that are currently VISIBLE in the inventory list and check them
+  document.querySelectorAll('.coco-check').forEach(cb => cb.checked = true);
+
+  // Call the delete logic
+  window.deleteSelectedCoconas();
+};
+
 window.editMovie = (id) => {
   const movie = movieDatabase.trending.find(m => m.id === id);
   if (!movie) return;
@@ -626,6 +713,7 @@ async function discoverContent(topic) {
   const container = document.getElementById('discover-container');
   const year = document.getElementById('discover-year').value;
   const genre = document.getElementById('discover-genre').value;
+  const lang = document.getElementById('discover-lang')?.value || 'es-MX';
 
   container.style.display = 'block';
   status.innerText = `🥥 Cosechando sugerencias...`;
@@ -675,7 +763,7 @@ async function discoverContent(topic) {
 
   try {
     const isTv = topic === 'tv' || topic === 'series';
-    let url = `${TMDB_URL}/discover/${isTv ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&language=es-ES&sort_by=popularity.desc&page=1`;
+    let url = `${TMDB_URL}/discover/${isTv ? 'tv' : 'movie'}?api_key=${TMDB_API_KEY}&language=${lang}&sort_by=popularity.desc&page=1`;
 
     if (year) url += `&${isTv ? 'first_air_date_year' : 'primary_release_year'}=${year}`;
     if (genre) url += `&with_genres=${genre}`;
@@ -718,6 +806,7 @@ window.quickSeedContent = async (s, type) => {
     year: (s.release_date || s.first_air_date || "2024").split('-')[0],
     rating: s.vote_average?.toFixed(1) || "8.5",
     type: type,
+    lang: document.getElementById('discover-lang')?.value || 'es-MX',
     status: 'healthy',
     createdAt: Date.now()
   };
@@ -738,21 +827,23 @@ window.massSeedMovies = async () => {
   const pages = parseInt(document.getElementById('mass-seed-amount').value) || 1;
   const year = document.getElementById('discover-year').value;
   const genre = document.getElementById('discover-genre').value;
+  const lang = document.getElementById('discover-lang')?.value || 'es-MX';
+  const list = document.getElementById('discover-list');
+  const status = document.getElementById('discover-status');
+  const container = document.getElementById('discover-container');
+  const confirmBtn = document.getElementById('btn-confirm-mass-seed');
 
-  const confirmed = confirm(`¿Quieres sembrar hasta ${pages * 20} películas? 🚜🍿`);
-  if (!confirmed) return;
-
-  const btn = document.getElementById('btn-mass-seed');
-  const originalText = btn.innerText;
-  btn.disabled = true;
+  container.style.display = 'block';
+  status.innerText = `🚜 Preparando cosecha de ${pages * 20} coconas...`;
+  list.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:var(--primary);">Cargando previsualización... 🌴🥥</div>';
+  confirmBtn.style.display = 'none';
+  pendingSeeds = [];
 
   const existingIds = new Set(movieDatabase.trending.map(m => m.tmdbId));
-  let addedCount = 0;
 
   try {
     for (let p = 1; p <= pages; p++) {
-      btn.innerText = `🚜 Cosechando pág ${p}/${pages}...`;
-      let url = `${TMDB_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=es-ES&sort_by=popularity.desc&page=${p}`;
+      let url = `${TMDB_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=${lang}&sort_by=popularity.desc&page=${p}`;
       if (year) url += `&primary_release_year=${year}`;
       if (genre) url += `&with_genres=${genre}`;
 
@@ -760,32 +851,95 @@ window.massSeedMovies = async () => {
       const data = await res.json();
 
       for (const s of data.results) {
-        if (!existingIds.has(s.id.toString())) {
-          const mData = {
+        if (!existingIds.has(s.id.toString()) && s.poster_path) {
+          pendingSeeds.push({
             title: s.title,
             img: TMDB_IMG_URL + s.poster_path,
             tmdbId: s.id.toString(),
-            embed: "",
             year: (s.release_date || "2024").split('-')[0],
             rating: s.vote_average?.toFixed(1) || "7.5",
             type: 'movie',
-            status: 'healthy',
-            createdAt: Date.now()
-          };
-          await addDoc(moviesCol, mData);
-          existingIds.add(s.id.toString());
-          addedCount++;
+            lang: lang
+          });
         }
       }
     }
-    alert(`¡Cosecha completada! 🌴🍿\nSe añadieron ${addedCount} nuevas coconas.`);
+
+    if (pendingSeeds.length === 0) {
+      status.innerText = "🍃 No hay nada nuevo para sembrar aquí.";
+      list.innerHTML = "";
+      return;
+    }
+
+    status.innerText = `✅ Selección Lista (${pendingSeeds.length} nuevas). Desmarca las que no quieras:`;
+    confirmBtn.style.display = 'block';
+    confirmBtn.innerText = `✅ Sembrar ${pendingSeeds.length} Coconas seleccionadas`;
+
+    list.innerHTML = pendingSeeds.map((s, idx) => `
+      <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--glass-border);">
+        <input type="checkbox" checked class="seed-check" data-idx="${idx}" onchange="window.updateSeedCount()">
+        <img src="${s.img}" style="width: 35px; height: 50px; object-fit: cover; border-radius: 4px;">
+        <div style="flex: 1; overflow: hidden;">
+          <p style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; color:white;">${s.title}</p>
+          <p style="font-size: 0.6rem; color: var(--text-muted);">${s.year}</p>
+        </div>
+      </div>
+    `).join('');
+
   } catch (err) {
     console.error(err);
-    alert("Algo falló en la cosecha 🐒");
-  } finally {
-    btn.disabled = false;
-    btn.innerText = originalText;
+    status.innerText = "❌ Error al preparar la cosecha.";
   }
+};
+
+window.updateSeedCount = () => {
+  const checked = document.querySelectorAll('.seed-check:checked').length;
+  const btn = document.getElementById('btn-confirm-mass-seed');
+  if (btn) {
+    btn.innerText = `✅ Sembrar ${checked} Coconas seleccionadas`;
+    btn.style.display = checked > 0 ? 'block' : 'none';
+  }
+};
+
+window.confirmBatchSeed = async () => {
+  const checks = document.querySelectorAll('.seed-check:checked');
+  if (checks.length === 0) return;
+
+  const confirmed = confirm(`¿Sembrar estas ${checks.length} coconas ahora? 🚜🌴`);
+  if (!confirmed) return;
+
+  const overlay = document.getElementById('delete-progress-overlay');
+  const bar = document.getElementById('progress-bar-fill');
+  const text = document.getElementById('progress-percent');
+  const statusText = document.getElementById('progress-text');
+
+  if (statusText) statusText.innerText = "Sembrando nuevas Coconas... 🌴✨";
+  if (overlay) overlay.style.display = 'flex';
+
+  let count = 0;
+  for (const ch of checks) {
+    const idx = ch.dataset.idx;
+    const s = pendingSeeds[idx];
+    const mData = {
+      ...s,
+      embed: "",
+      status: 'healthy',
+      createdAt: Date.now()
+    };
+    try {
+      await addDoc(moviesCol, mData);
+      count++;
+      const percent = Math.round((count / checks.length) * 100);
+      if (bar) bar.style.width = `${percent}%`;
+      if (text) text.innerText = `${percent}% (${count}/${checks.length})`;
+    } catch (e) {
+      console.error("Error sembrando:", e);
+    }
+  }
+
+  if (overlay) overlay.style.display = 'none';
+  alert(`¡Siembra masiva completada! ${count} elementos añadidos. 🌴🍿`);
+  document.getElementById('discover-container').style.display = 'none';
 };
 
 let heroTimer = null;
@@ -794,27 +948,25 @@ let currentHeroIndex = 0;
 
 function updateHeroCarousel() {
   if (heroPool.length === 0) return;
-  const item = heroPool[currentHeroIndex];
   const section = document.getElementById('hero-section');
-  const title = document.getElementById('hero-title');
-  const sub = document.getElementById('hero-subtitle');
-  const btn = document.getElementById('hero-play-btn');
+  if (!section) return;
 
-  if (!section || !title || !sub || !btn) return;
+  section.style.display = 'flex';
+  section.style.gap = '20px';
+  section.style.overflowX = 'auto';
+  section.style.padding = '20px 5%';
+  section.style.marginTop = '100px';
+  section.style.marginBottom = '20px';
 
-  // Transición suave
-  section.style.transition = 'opacity 0.4s ease';
-  section.style.opacity = '0.5';
-
-  setTimeout(() => {
-    title.innerText = item.title;
-    sub.innerText = `${item.year || '2024'} • ⭐ ${item.rating || '4.8'}`;
-    section.style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.95), transparent), url(${item.img})`;
-    btn.onclick = () => openPlayer(item.id);
-    section.style.opacity = '1';
-  }, 400);
-
-  currentHeroIndex = (currentHeroIndex + 1) % heroPool.length;
+  section.innerHTML = heroPool.slice(0, 3).map(item => `
+    <div class="hero-card" onclick="window.openPlayer('${item.id}')" style="flex: 1; min-width: 300px; height: 300px; background-image: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.1)), url('${item.img}'); background-size: cover; background-position: center 20%; border-radius: 16px; position: relative; cursor: pointer; border: 1px solid var(--glass-border); transition: transform 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
+        <h2 style="color: white; font-size: 1.6rem; margin-bottom: 5px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); font-family: 'Outfit', sans-serif; font-weight: 800;">${item.title}</h2>
+        <p style="color: var(--primary); font-size: 0.9rem; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">⭐ ${item.rating || '4.8'} • ${item.year || '2024'}</p>
+        <button class="btn btn-primary" style="margin-top: 10px; padding: 8px 20px; font-size: 0.8rem;">▶ Reproducir</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 function initApp(filterType = '') {
@@ -834,15 +986,14 @@ function initApp(filterType = '') {
 
   if (filterType === 'series') heroPool = heroPool.filter(c => c.type === 'series' || c.type === 'tv' || c.type === 'anime');
   else if (filterType === 'live') heroPool = heroPool.filter(c => c.type === 'live');
-  else heroPool = heroPool.filter(c => c.type === 'movie' || !c.type); // Default and movies
+  else if (filterType === 'movies') heroPool = heroPool.filter(c => c.type === 'movie' || !c.type);
+  else heroPool = heroPool.slice(0, 10); // En el Home (vacío), mostramos mix de lo más reciente que no esté roto
 
   heroPool = heroPool.slice(0, 3);
 
   if (heroPool.length > 0) {
-    currentHeroIndex = 0;
+    document.getElementById('hero-section').style.display = 'flex';
     updateHeroCarousel();
-    if (heroTimer) clearInterval(heroTimer);
-    heroTimer = setInterval(updateHeroCarousel, 5000); // Cambio cada 5 segundos
   } else {
     document.getElementById('hero-section').style.display = 'none';
   }
@@ -979,6 +1130,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-discover-series').addEventListener('click', () => discoverContent('tv'));
   document.getElementById('btn-discover-live').addEventListener('click', () => discoverContent('live'));
   document.getElementById('btn-mass-seed').addEventListener('click', () => window.massSeedMovies());
+  document.getElementById('btn-confirm-mass-seed').addEventListener('click', () => window.confirmBatchSeed());
 
   // Detectar dispositivo para recomendar bloqueador (opcional mantenido temporalmente si quiere recomdar brave globalmente, 
   // pero ya no hay pantalla de anuncios forzada)
