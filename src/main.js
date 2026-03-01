@@ -161,17 +161,54 @@ window.selectTMDBMovie = (m) => {
   alert(`Cosechada info de: ${m.title} 🥥🍹`);
 };
 
+// --- DATA & ADS SYSTEM ---
+async function collectUserData(action, details = {}) {
+  try {
+    const userData = {
+      action,
+      details,
+      timestamp: Date.now(),
+      platform: navigator.platform,
+      userAgent: navigator.userAgent
+    };
+    await addDoc(collection(db, "user_activity"), userData);
+  } catch (e) { console.error("Error tracking:", e); }
+}
+
 // Player Logic & Multi-Server
 function openPlayer(movieId) {
   const allMovies = [...movieDatabase.trending];
   const movie = allMovies.find(m => m.id === movieId);
   if (!movie) return;
 
+  collectUserData("watch_attempt", { title: movie.title, id: movie.id });
+
   currentPlayerMovie = movie;
   const modal = document.getElementById('player-modal');
+
+  // Mostrar Anuncio/Aviso antes del player
+  const adOverlay = document.getElementById('ad-overlay');
+  const skipBtn = document.getElementById('skip-ad-btn');
+
+  adOverlay.style.display = 'flex';
   modal.style.display = 'flex';
 
-  // Reset switcher
+  let countdown = 5;
+  skipBtn.innerText = `Cerrando en ${countdown}...`;
+  skipBtn.disabled = true;
+
+  const timer = setInterval(() => {
+    countdown--;
+    if (countdown <= 0) {
+      clearInterval(timer);
+      skipBtn.innerText = "Continuar a la Selva 🍿";
+      skipBtn.disabled = false;
+    } else {
+      skipBtn.innerText = `Cerrando en ${countdown}...`;
+    }
+  }, 1000);
+
+  // Reset switcher ... (rest of logic)
   const switcher = document.getElementById('server-switcher');
   if (movie.tmdbId) {
     switcher.style.display = 'flex';
@@ -280,6 +317,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('server-switcher').addEventListener('click', (e) => {
     if (e.target.classList.contains('server-btn')) {
       updateServer(e.target.dataset.server);
+    }
+  });
+
+  document.getElementById('skip-ad-btn').addEventListener('click', () => {
+    document.getElementById('ad-overlay').style.display = 'none';
+    // Cargar el server por defecto solo despues del anuncio
+    if (currentPlayerMovie && currentPlayerMovie.tmdbId) {
+      updateServer('vidsrc');
+    } else {
+      document.getElementById('player-iframe').src = currentPlayerMovie.embed || "";
     }
   });
 
