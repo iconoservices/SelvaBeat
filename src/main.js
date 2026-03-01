@@ -278,13 +278,28 @@ function updateServer(serverKey) {
     loader.style.opacity = '1';
 
     let url = "";
+    const type = currentPlayerMovie.type || 'movie';
+    const isSeries = type === 'series' || type === 'tv';
+
     switch (serverKey) {
-      case 'vidsrc': url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&lang=es`; break;
-      case 'superembed': url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&lang=es`; break;
-      case 'smashy': url = `https://player.smashy.stream/movie/${tmdbId}?lang=es`; break;
-      case 'autoembed': url = `https://autoembed.co/movie/tmdb/${tmdbId}?lang=es`; break;
-      case '2embed': url = `https://www.2embed.cc/embed/${tmdbId}`; break;
-      default: url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&lang=es`;
+      case 'vidsrc':
+        url = isSeries
+          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&lang=es`
+          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&lang=es`;
+        break;
+      case 'superembed':
+        url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&lang=es`;
+        break;
+      case 'smashy':
+        url = isSeries
+          ? `https://player.smashy.stream/tv/${tmdbId}?lang=es`
+          : `https://player.smashy.stream/movie/${tmdbId}?lang=es`;
+        break;
+      case 'autoembed':
+        url = `https://autoembed.co/${isSeries ? 'tv' : 'movie'}/tmdb/${tmdbId}?lang=es`;
+        break;
+      default:
+        url = `https://vidsrc.xyz/embed/${isSeries ? 'tv' : 'movie'}?tmdb=${tmdbId}&lang=es`;
     }
 
     iframe.src = url;
@@ -316,24 +331,43 @@ function initApp() {
   const container = document.getElementById('main-content');
   container.innerHTML = '';
 
-  // Sort and filter categories
-  const allMovies = [...movieDatabase.trending].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const allContent = [...movieDatabase.trending].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const movies = allContent.filter(c => c.type === 'movie' || !c.type);
+  const series = allContent.filter(c => c.type === 'series' || c.type === 'tv');
 
-  // Hero Update
-  if (allMovies.length > 0) {
-    const featured = allMovies[0];
+  // Hero Update (Latest Movie)
+  if (movies.length > 0) {
+    const featured = movies[0];
     document.getElementById('hero-title').innerText = featured.title;
-    document.getElementById('hero-subtitle').innerText = featured.year || "Recién llegada a la selva";
-    document.getElementById('hero-section').style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.9), transparent), url(${featured.img})`;
+    document.getElementById('hero-subtitle').innerText = featured.year || "Recién Cosechada";
+    document.getElementById('hero-section').style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.95), transparent), url(${featured.img})`;
     document.getElementById('hero-play-btn').onclick = () => openPlayer(featured.id);
   }
 
   // Rows
-  const recent = allMovies.slice(0, 10);
-  const trending = allMovies.slice(10, 25);
+  if (movies.length > 0) renderRow('Películas Estreno 🎬', movies.slice(0, 15));
+  if (series.length > 0) renderRow('Series de la Jungla 🏎️', series);
+}
 
-  renderRow('Recién Cosechadas 🥥', recent);
-  if (trending.length > 0) renderRow('Más Jugosas de la Selva 🍹', trending);
+function renderChannels() {
+  const container = document.getElementById('main-channels');
+  // Se filtran los que tengan tipo 'live' O que tengan un embed manual y no tengan tmdbId (canales)
+  const liveChannels = [...movieDatabase.trending].filter(c => c.type === 'live' || (c.embed && !c.tmdbId));
+
+  if (liveChannels.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-muted); padding: 50px;">Buscando señal... 📡</p>';
+    return;
+  }
+
+  container.innerHTML = liveChannels.map(ch => `
+    <div class="tv-card" onclick="window.handleChannelClick('${ch.embed}')">
+      <img src="${ch.img}" alt="${ch.title}" onerror="this.src='https://via.placeholder.com/600x400?text=SIN+SEÑAL'">
+      <div class="tv-info">
+        <h3 style="font-size: 0.95rem;">${ch.title}</h3>
+        <p style="font-size: 0.7rem; color: var(--primary);">• EN VIVO</p>
+      </div>
+    </div>
+  `).join('');
 }
 
 // Initial Setup
@@ -358,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
       embed: document.getElementById('m-embed').value,
       year: document.getElementById('m-meta').value.split('/')[0].trim(),
       rating: document.getElementById('m-meta').value.split('/')[1]?.trim() || '4.8',
+      type: document.getElementById('m-tmdb-id').value ? 'movie' : 'live', // Auto-detection basica
       status: 'healthy',
       createdAt: Date.now()
     };
