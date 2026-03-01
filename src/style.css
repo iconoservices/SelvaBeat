@@ -653,18 +653,18 @@ iframe {
 
 /* Custom Ads Overlay */
 .ad-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(5, 5, 5, 0.95);
-  z-index: 100;
+  background: rgba(5, 5, 5, 0.98);
+  z-index: 2100;
   display: none;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(15px);
 }
 
 .ad-content {
@@ -837,6 +837,11 @@ iframe {
 
   .card-info {
     padding: 12px;
+  }
+
+  /* Ocultar redundancia en movil si ya hay guia lateral */
+  .ad-notice {
+    display: none;
   }
 }
 
