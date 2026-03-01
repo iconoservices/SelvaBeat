@@ -189,10 +189,15 @@
             <select id="inventory-filter" class="form-control" onchange="window.filterInventoryByCategory(this.value)"
               style="flex: 1;">
               <option value="all">🌐 Ver Todo</option>
-              <option value="broken">🔴 Imagen Rota</option>
+              <option value="broken">🔴 Imagen Rota / Error</option>
               <option value="missing">🟠 Sin ID TMDB</option>
             </select>
+            <button id="btn-bulk-delete" class="btn" onclick="window.bulkDeleteCurrentFilter()"
+              style="display: none; background: #E74C3C; color: white; border: none; font-size: 0.75rem; padding: 10px; flex: 1; font-weight: bold;">
+              🗑️ Borrar Errores
+            </button>
           </div>
+          <p id="inventory-status" style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px;"></p>
           <table class="admin-table">
             <thead>
               <tr>
@@ -263,20 +268,45 @@
         </div>
       </div>
 
-      <!-- Server Switcher -->
-      <div class="server-switcher" id="server-switcher">
-        <span style="color: var(--primary); font-weight: 700; margin-right: 10px;">SERVIDOR:</span>
-        <button class="server-btn active" data-server="vidsrc">Vidsrc</button>
-        <button class="server-btn" data-server="superembed">SuperE</button>
-        <button class="server-btn" data-server="smashy">Smashy</button>
-        <button class="server-btn" data-server="autoembed">AutoE</button>
+      <!-- Player Controls -->
+      <div class="player-controls"
+        style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: center;">
+
+        <!-- Season/Episode Selector (Series Only) -->
+        <div id="series-navigator"
+          style="display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 30px; border: 1px solid var(--glass-border);">
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: bold;">TEMP:</span>
+            <input type="number" id="series-season" value="1" min="1"
+              style="width: 45px; background: none; border: none; color: white; font-weight: bold; font-size: 0.9rem; text-align: center;"
+              onchange="window.changeEpisode()">
+          </div>
+          <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: bold;">CAP:</span>
+            <input type="number" id="series-episode" value="1" min="1"
+              style="width: 45px; background: none; border: none; color: white; font-weight: bold; font-size: 0.9rem; text-align: center;"
+              onchange="window.changeEpisode()">
+          </div>
+        </div>
+
+        <!-- Server Switcher -->
+        <div class="server-switcher" id="server-switcher" style="margin-top: 0;">
+          <span style="color: var(--primary); font-weight: 700; margin-right: 10px; font-size: 0.8rem;">SERVER:</span>
+          <button class="server-btn active" data-server="vidsrc"
+            style="padding: 5px 12px; font-size: 0.75rem;">Vidsrc</button>
+          <button class="server-btn" data-server="superembed"
+            style="padding: 5px 12px; font-size: 0.75rem;">SuperE</button>
+          <button class="server-btn" data-server="smashy" style="padding: 5px 12px; font-size: 0.75rem;">Smashy</button>
+          <button class="server-btn" data-server="autoembed"
+            style="padding: 5px 12px; font-size: 0.75rem;">AutoE</button>
+        </div>
       </div>
 
       <!-- Ad Blocker Notice -->
       <div class="ad-notice">
-        <span id="adblock-text">🛡️ <b>¿Odias los botones falsos y anuncios ocultos?</b> Para disfrutar la selva en paz
-          usa </span><a href="https://brave.com/" target="_blank" style="color: var(--primary);" id="adblock-link">Brave
-          Browser</a>.
+        <span id="adblock-text">🛡️ <b>Publicidad Intrusiva?</b> Para disfrutar la selva en paz usa </span><a
+          href="https://brave.com/" target="_blank" style="color: var(--primary);" id="adblock-link">Brave Browser</a>.
       </div>
     </div>
 
@@ -287,7 +317,7 @@
       <a href="#" class="nav-item" onclick="window.location.hash='live'">🔴</a>
     </nav>
   </div>
-  <script type="module" src="/src/main.js?v=1.9"></script>
+  <script type="module" src="/src/main.js?v=2.0"></script>
 </body>
 
 </html>

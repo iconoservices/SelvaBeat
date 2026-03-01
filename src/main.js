@@ -242,8 +242,9 @@ window.markAsBroken = (id) => {
 };
 
 window.filterInventoryByCategory = (category) => {
-  const search = document.getElementById('inventory-search').value.toLowerCase();
-  let filtered = _allInventoryItems.filter(m => m.title.toLowerCase().includes(search));
+  const searchInput = document.getElementById('inventory-search');
+  const query = searchInput ? searchInput.value.toLowerCase() : '';
+  let filtered = _allInventoryItems.filter(m => m.title.toLowerCase().includes(query));
 
   if (category === 'broken') {
     filtered = filtered.filter(m => window._brokenIds.has(m.id) || !m.img || m.img.includes('placeholder'));
@@ -252,11 +253,37 @@ window.filterInventoryByCategory = (category) => {
   }
 
   _renderInventoryRows(filtered);
+  // Mostrar/Ocultar botón de borrado masivo
+  const bulkBtn = document.getElementById('btn-bulk-delete');
+  if (bulkBtn) {
+    bulkBtn.style.display = (category === 'broken') ? 'block' : 'none';
+    bulkBtn.innerText = `🗑️ Borrar ${filtered.length} con Error`;
+  }
+};
+
+window.bulkDeleteCurrentFilter = async () => {
+  const filter = document.getElementById('inventory-filter').value;
+  if (filter !== 'broken') return;
+
+  const searchInput = document.getElementById('inventory-search');
+  const query = searchInput ? searchInput.value.toLowerCase() : '';
+  const toDelete = _allInventoryItems.filter(m =>
+    m.title.toLowerCase().includes(query) &&
+    (window._brokenIds.has(m.id) || !m.img || m.img.includes('placeholder'))
+  );
+
+  if (toDelete.length === 0) return;
+  if (!confirm(`¿Estás seguro de borrar ${toDelete.length} coconas con error de tu selva? 🌴🗑️`)) return;
+
+  for (const item of toDelete) {
+    await deleteDoc(doc(db, "movies", item.id));
+  }
+  alert(`¡Limpieza completada! Se fueron ${toDelete.length} intrusos.`);
 };
 
 window.filterInventory = (query) => {
-  const filtered = _allInventoryItems.filter(m => m.title.toLowerCase().includes(query.toLowerCase()));
-  _renderInventoryRows(filtered);
+  const category = document.getElementById('inventory-filter').value;
+  window.filterInventoryByCategory(category);
 };
 
 // TMDB Search Integration
@@ -385,10 +412,18 @@ function openPlayer(movieId) {
   const modal = document.getElementById('player-modal');
   modal.style.display = 'flex';
 
+  const isSeries = movie.type === 'series' || movie.type === 'tv' || movie.type === 'anime';
+  const nav = document.getElementById('series-navigator');
+  if (nav) nav.style.display = isSeries ? 'flex' : 'none';
+  if (isSeries) {
+    document.getElementById('series-season').value = 1;
+    document.getElementById('series-episode').value = 1;
+  }
+
   startAdCountdown(() => {
     if (movie.tmdbId) {
       document.getElementById('server-switcher').style.display = 'flex';
-      updateServer('vidsrc'); // Se quitó el argumento 'true' innecesario
+      updateServer('vidsrc');
     } else {
       document.getElementById('server-switcher').style.display = 'none';
       document.getElementById('player-iframe').src = movie.embed || "";
@@ -396,7 +431,7 @@ function openPlayer(movieId) {
   });
 }
 
-function updateServer(serverKey) {
+function updateServer(serverKey, season = 1, episode = 1) {
   if (!currentPlayerMovie || !currentPlayerMovie.tmdbId) return;
 
   const loadIframe = () => {
@@ -418,26 +453,30 @@ function updateServer(serverKey) {
     switch (serverKey) {
       case 'vidsrc':
         url = isSeries
-          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&lang=es`
+          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${season}&episode=${episode}&lang=es`
           : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&lang=es`;
         break;
       case 'superembed':
-        url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&lang=es`;
+        url = isSeries
+          ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${season}&e=${episode}&lang=es`
+          : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&lang=es`;
         break;
       case 'smashy':
         url = isSeries
-          ? `https://player.smashy.stream/tv/${tmdbId}?lang=es`
+          ? `https://player.smashy.stream/tv/${tmdbId}?s=${season}&e=${episode}&lang=es`
           : `https://player.smashy.stream/movie/${tmdbId}?lang=es`;
         break;
       case 'autoembed':
-        url = `https://autoembed.co/${isSeries ? 'tv' : 'movie'}/tmdb/${tmdbId}?lang=es`;
+        url = isSeries
+          ? `https://autoembed.co/tv/tmdb/${tmdbId}?s=${season}&e=${episode}&lang=es`
+          : `https://autoembed.co/movie/tmdb/${tmdbId}?lang=es`;
         break;
       default:
         url = `https://vidsrc.xyz/embed/${isSeries ? 'tv' : 'movie'}?tmdb=${tmdbId}&lang=es`;
     }
 
     iframe.src = url;
-    // Sandbox balanceado: allow-top-navigation-by-user-activation es VITAL para que los selectores de episodios funcionen en las series.
+    // Navigation for series enabled
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation');
 
     iframe.onload = () => {
@@ -450,6 +489,13 @@ function updateServer(serverKey) {
 
   loadIframe();
 }
+
+window.changeEpisode = () => {
+  const s = document.getElementById('series-season').value || 1;
+  const e = document.getElementById('series-episode').value || 1;
+  const activeServer = document.querySelector('.server-btn.active').dataset.server;
+  updateServer(activeServer, s, e);
+};
 
 // Exported Actions
 window.handleCardClick = (id) => openPlayer(id);
@@ -677,21 +723,31 @@ function initApp() {
   const container = document.getElementById('main-content');
   container.innerHTML = '';
 
-  const allContent = [...movieDatabase.trending].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  // ORDEN INTELIGENTE: Salud -> Fecha de Creación
+  const allContent = [...movieDatabase.trending].sort((a, b) => {
+    const healthA = window._brokenIds.has(a.id) ? 0 : 1;
+    const healthB = window._brokenIds.has(b.id) ? 0 : 1;
+    if (healthA !== healthB) return healthB - healthA;
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
 
-  // Clasificación para Home Estilo Netflix
-  const featured = allContent.find(c => c.type === 'movie' || !c.type) || allContent[0];
+  // Pool de Recomendados (Hero)
+  const poolHero = allContent
+    .filter(c => (c.type === 'movie' || !c.type) && !window._brokenIds.has(c.id))
+    .slice(0, 5);
+
+  const randomFeatured = poolHero[Math.floor(Math.random() * poolHero.length)] || allContent[0];
   const releases = allContent.slice(0, 20);
   const movies = allContent.filter(c => c.type === 'movie' || !c.type).slice(0, 50);
   const series = allContent.filter(c => c.type === 'series' || c.type === 'tv').slice(0, 50);
   const anime = allContent.filter(c => c.type === 'anime' || c.title.toLowerCase().includes('anime')).slice(0, 30);
 
   // Hero Update
-  if (featured) {
-    document.getElementById('hero-title').innerText = featured.title;
-    document.getElementById('hero-subtitle').innerText = featured.year || "Novedad en la Selva";
-    document.getElementById('hero-section').style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.95), transparent), url(${featured.img})`;
-    document.getElementById('hero-play-btn').onclick = () => openPlayer(featured.id);
+  if (randomFeatured) {
+    document.getElementById('hero-title').innerText = randomFeatured.title;
+    document.getElementById('hero-subtitle').innerText = `${randomFeatured.year || '2024'} • ⭐ ${randomFeatured.rating || '4.8'}`;
+    document.getElementById('hero-section').style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.95), transparent), url(${randomFeatured.img})`;
+    document.getElementById('hero-play-btn').onclick = () => openPlayer(randomFeatured.id);
   }
 
   // Rows Estilo Netflix

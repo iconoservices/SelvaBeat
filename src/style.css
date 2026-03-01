@@ -96,8 +96,6 @@ h3,
   position: relative;
 }
 
-.logo span:last-child::after {}
-
 .nav-links {
   display: flex;
   gap: 30px;
@@ -877,4 +875,27 @@ iframe {
 /* Fix mobile nav padding */
 body {
   padding-bottom: 70px;
+}
+
+/* Season/Episode Navigator */
+#series-navigator input[type=number]::-webkit-inner-spin-button,
+#series-navigator input[type=number]::-webkit-outer-spin-button {
+  opacity: 1;
+  filter: invert(1);
+}
+
+#series-navigator input:focus {
+  outline: none;
+}
+
+#btn-bulk-delete:hover {
+  background: #C0392B !important;
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .player-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
 }
