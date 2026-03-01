@@ -31,6 +31,7 @@ onSnapshot(moviesCol, (snapshot) => {
 
   const hash = window.location.hash;
   if (hash === '#admin') renderInventory();
+  else if (hash === '#live') renderChannels();
   else initApp();
 });
 
