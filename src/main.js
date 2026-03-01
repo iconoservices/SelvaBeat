@@ -673,6 +673,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Pegado directo de imágenes (Clipboard)
+  document.getElementById('m-img').addEventListener('paste', (e) => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (const item of items) {
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        window.handleImageUpload(file);
+      }
+    }
+  });
+
   // Movie Form Submit (Add or Update)
   document.getElementById('movie-form').addEventListener('submit', async (e) => {
     e.preventDefault();
