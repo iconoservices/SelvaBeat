@@ -200,12 +200,12 @@ function updateServer(serverKey) {
 
   let url = "";
   switch (serverKey) {
-    case 'vidsrc': url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`; break;
-    case 'superembed': url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`; break;
-    case 'smashy': url = `https://player.smashy.stream/movie/${tmdbId}`; break;
-    case 'autoembed': url = `https://autoembed.co/movie/tmdb/${tmdbId}`; break;
+    case 'vidsrc': url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&lang=es`; break;
+    case 'superembed': url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&lang=es`; break;
+    case 'smashy': url = `https://player.smashy.stream/movie/${tmdbId}?lang=es`; break;
+    case 'autoembed': url = `https://autoembed.co/movie/tmdb/${tmdbId}?lang=es`; break;
     case '2embed': url = `https://www.2embed.cc/embed/${tmdbId}`; break;
-    default: url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
+    default: url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&lang=es`;
   }
 
   iframe.src = url;
