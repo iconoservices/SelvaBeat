@@ -16,10 +16,9 @@
         <span>SELVA</span><span>FLIX</span>
       </div>
       <ul class="nav-links">
-        <li><a href="#" class="active">Inicio</a></li>
-        <li><a href="#">Películas</a></li>
-        <li><a href="#">Series</a></li>
-        <li><a href="#">En Vivo</a></li>
+        <li><a href="#" class="active" onclick="window.location.hash = ''">Inicio</a></li>
+        <li><a href="#" onclick="window.location.hash = 'movies'">Películas</a></li>
+        <li><a href="#" onclick="window.location.hash = 'live'">En Vivo 🔴</a></li>
       </ul>
       <div class="nav-actions">
         <input type="text" placeholder="Buscar en la selva..." class="search-bar" id="global-search">
@@ -53,6 +52,18 @@
       <div class="content-sections" id="main-content">
         <!-- Rows will be injected here -->
       </div>
+    </main>
+
+    <!-- LIVE TV VIEW -->
+    <main id="tv-view" style="display: none; padding-top: 100px;">
+      <section class="category-row">
+        <div class="row-header">
+          <h2 class="row-title">Canales en la Selva 📺</h2>
+        </div>
+        <div class="movie-list" id="main-channels">
+          <!-- Channels will be injected here -->
+        </div>
+      </section>
     </main>
 
     <!-- Admin View -->

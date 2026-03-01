@@ -44,13 +44,48 @@ function handleRouting() {
   if (hash === '#admin') {
     homeView.style.display = 'none';
     adminView.style.display = 'block';
+    document.getElementById('tv-view').style.display = 'none';
+    renderRow('Canales', []); // Clear rows
     renderInventory();
+  } else if (hash === '#live') {
+    homeView.style.display = 'none';
+    adminView.style.display = 'none';
+    document.getElementById('tv-view').style.display = 'block';
+    renderChannels();
   } else {
     homeView.style.display = 'block';
     adminView.style.display = 'none';
+    document.getElementById('tv-view').style.display = 'none';
     initApp();
   }
 }
+
+function renderChannels() {
+  const container = document.getElementById('main-channels');
+  const dummyChannels = [
+    { id: 'ch1', title: 'Latina TV', img: 'https://via.placeholder.com/300x150?text=LATINA+TV', embed: 'https://ejemplo.com/m3u8-player?url=https://stream.latina.pe/live.m3u8' },
+    { id: 'ch2', title: 'America TV', img: 'https://via.placeholder.com/300x150?text=AMERICA+TV', embed: 'https://ejemplo.com/m3u8-player?url=https://stream.america.pe/live.m3u8' },
+    { id: 'ch3', title: 'Panamericana', img: 'https://via.placeholder.com/300x150?text=PANAMERICANA', embed: 'https://ejemplo.com/m3u8-player?url=https://stream.panamericana.pe/live.m3u8' }
+  ];
+
+  container.innerHTML = dummyChannels.map(ch => `
+    <div class="tv-card" onclick="window.handleChannelClick('${ch.embed}')">
+      <img src="${ch.img}" alt="${ch.title}">
+      <div class="tv-info">
+        <h3 style="font-size: 0.9rem;">${ch.title}</h3>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.handleChannelClick = (url) => {
+  const modal = document.getElementById('player-modal');
+  const iframe = document.getElementById('player-iframe');
+  modal.style.display = 'flex';
+  document.getElementById('server-switcher').style.display = 'none';
+  document.getElementById('ad-overlay').style.display = 'none';
+  iframe.src = url;
+};
 
 // Global Search (Filter)
 function handleGlobalSearch(query) {
