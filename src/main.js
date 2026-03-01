@@ -164,9 +164,9 @@ function renderRow(title, data) {
 
 // Admin: Render Inventory Table
 let _allInventoryItems = [];
+window._brokenIds = new Set(); // Para rastrear imágenes que fallaron en esta sesión
 
 function renderInventory() {
-  const list = document.getElementById('inventory-list');
   _allInventoryItems = [...movieDatabase.trending];
   _renderInventoryRows(_allInventoryItems);
 }
@@ -174,27 +174,61 @@ function renderInventory() {
 function _renderInventoryRows(items) {
   const list = document.getElementById('inventory-list');
   const typeEmoji = { movie: '🎬', series: '🏆', live: '🔴' };
-  list.innerHTML = items.map(m => `
-    <tr>
-      <td>${typeEmoji[m.type] || '🎬'}</td>
-      <td style="display: flex; align-items: center; gap: 10px;">
-        <img src="${m.img}" style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/40x60'">
-        <span>${m.title}</span>
-      </td>
-      <td>
-        <span style="color: ${m.status === 'healthy' ? '#2ECC71' : '#E74C3C'}">
-          ${m.status === 'healthy' ? '● Activo' : '● Mant.'}
-        </span>
-      </td>
-      <td>
-        <div style="display: flex; gap: 5px;">
-          <button class="action-btn btn-edit" onclick="window.editMovie('${m.id}')">Editar</button>
-          <button class="action-btn btn-delete" onclick="window.deleteMovie('${m.id}')">Borrar</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+
+  if (items.length === 0) {
+    list.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-muted);">No se encontraron coconas con ese filtro... 🍃</td></tr>';
+    return;
+  }
+
+  list.innerHTML = items.map(m => {
+    const isBroken = window._brokenIds.has(m.id);
+    return `
+      <tr style="${isBroken ? 'background: rgba(231, 76, 60, 0.05);' : ''}">
+        <td>${typeEmoji[m.type] || '🎬'}</td>
+        <td style="display: flex; align-items: center; gap: 10px;">
+          <div style="position: relative;">
+            <img src="${m.img}" 
+                 style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px; ${isBroken ? 'border: 2px solid #E74C3C;' : ''}" 
+                 onerror="this.src='https://via.placeholder.com/40x60?text=ER'; window.markAsBroken('${m.id}')">
+            ${isBroken ? '<span style="position:absolute;top:-5px;right:-5px;background:#E74C3C;width:12px;height:12px;border-radius:50%;border:2px solid white;"></span>' : ''}
+          </div>
+          <span style="${isBroken ? 'color: #E74C3C; font-weight: bold;' : ''}">${m.title}</span>
+        </td>
+        <td>
+          <span style="color: ${m.status === 'healthy' ? '#2ECC71' : '#E74C3C'}">
+            ${isBroken ? '⚠️ Error de Link' : (m.status === 'healthy' ? '● Activo' : '● Mant.')}
+          </span>
+        </td>
+        <td>
+          <div style="display: flex; gap: 5px;">
+            <button class="action-btn btn-edit" onclick="window.editMovie('${m.id}')" title="Editar Imagen y Datos">✏️</button>
+            <button class="action-btn btn-delete" onclick="window.deleteMovie('${m.id}')" title="Borrar de la Selva">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
+
+window.markAsBroken = (id) => {
+  if (!window._brokenIds.has(id)) {
+    window._brokenIds.add(id);
+    // No refrescamos todo el tiempo para evitar bucles, solo si el filtro está activo lo verás luego
+  }
+};
+
+window.filterInventoryByCategory = (category) => {
+  const search = document.getElementById('inventory-search').value.toLowerCase();
+  let filtered = _allInventoryItems.filter(m => m.title.toLowerCase().includes(search));
+
+  if (category === 'broken') {
+    filtered = filtered.filter(m => window._brokenIds.has(m.id) || !m.img || m.img.includes('placeholder'));
+  } else if (category === 'missing') {
+    filtered = filtered.filter(m => !m.tmdbId || m.tmdbId === "");
+  }
+
+  _renderInventoryRows(filtered);
+};
 
 window.filterInventory = (query) => {
   const filtered = _allInventoryItems.filter(m => m.title.toLowerCase().includes(query.toLowerCase()));

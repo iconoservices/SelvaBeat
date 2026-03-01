@@ -141,9 +141,15 @@
         <!-- Inventory Table -->
         <div class="admin-card" style="overflow-x: auto;">
           <h2 class="admin-title">📦 Inventario de Coconas</h2>
-          <div style="margin-bottom: 15px;">
-            <input type="text" id="inventory-search" class="form-control" placeholder="🔍 Buscar en inventario..."
-              oninput="window.filterInventory(this.value)">
+          <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+            <input type="text" id="inventory-search" class="form-control" placeholder="🔍 Buscar por nombre..."
+              oninput="window.filterInventory(this.value)" style="flex: 2;">
+            <select id="inventory-filter" class="form-control" onchange="window.filterInventoryByCategory(this.value)"
+              style="flex: 1;">
+              <option value="all">🌐 Ver Todo</option>
+              <option value="broken">🔴 Imagen Rota</option>
+              <option value="missing">🟠 Sin ID TMDB</option>
+            </select>
           </div>
           <table class="admin-table">
             <thead>
