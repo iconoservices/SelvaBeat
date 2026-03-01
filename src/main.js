@@ -521,8 +521,8 @@ window.handleImageUpload = async (file) => {
     preview.src = url;
     alert("¡Subida con éxito a la nube de SelvaFlix! ☁️🦁");
   } catch (err) {
-    console.error(err);
-    alert("Error al subir a la nube. ¿Tienes activado Firebase Storage? 🐒☁️");
+    console.error("Error completo de Firebase:", err);
+    alert(`Error al subir: ${err.message}\n\nRECUERDA: Tienes que activar 'Storage' en tu consola de Firebase y poner las reglas en modo prueba o públicas para que funcione. 🐒☁️`);
     preview.src = 'https://via.placeholder.com/100x150?text=Error';
   }
 };
@@ -626,7 +626,7 @@ window.quickSeedManual = async (ch, type) => {
 };
 
 window.massSeedMovies = async () => {
-  const confirmed = confirm("¿Seguro que quieres sembrar 100+ películas de un solo golpe? 🚜🍿\nEsto llenará tu catálogo con lo más popular del mundo.");
+  const confirmed = confirm("¿Seguro que quieres sembrar 300+ películas de un solo golpe? 🚜🍿\nEsto llenará tu catálogo masivamente con lo más popular.");
   if (!confirmed) return;
 
   const btn = document.getElementById('btn-mass-seed');
@@ -637,8 +637,9 @@ window.massSeedMovies = async () => {
   let addedCount = 0;
 
   try {
-    for (let p = 1; p <= 6; p++) {
-      btn.innerText = `🚜 Cosechando pág ${p}/6...`;
+    // Subimos a 15 páginas para asegurar >200 pelis nuevas
+    for (let p = 1; p <= 15; p++) {
+      btn.innerText = `🚜 Cosechando pág ${p}/15... (${addedCount} nuevas)`;
       const res = await fetch(`${TMDB_URL}/movie/popular?api_key=${TMDB_API_KEY}&language=es-ES&page=${p}`);
       const data = await res.json();
 
@@ -657,6 +658,7 @@ window.massSeedMovies = async () => {
             createdAt: Date.now()
           };
           await addDoc(moviesCol, mData);
+          movieDatabase.trending.push({ ...mData, id: 'temp-' + Date.now() }); // Evitar duplicar en el mismo loop
           addedCount++;
         }
       }
@@ -664,7 +666,7 @@ window.massSeedMovies = async () => {
     alert(`¡Mega-Cosecha completada! 🌴🍿\nSe añadieron ${addedCount} nuevas películas a tu selva.`);
   } catch (err) {
     console.error(err);
-    alert("Hubo un cansancio en la cosecha de 100 pelis 🐒");
+    alert("Hubo un cansancio en la cosecha masiva 🐒");
   } finally {
     btn.disabled = false;
     btn.innerText = originalText;
@@ -679,10 +681,10 @@ function initApp() {
 
   // Clasificación para Home Estilo Netflix
   const featured = allContent.find(c => c.type === 'movie' || !c.type) || allContent[0];
-  const releases = allContent.slice(0, 10);
-  const movies = allContent.filter(c => c.type === 'movie' || !c.type).slice(0, 15);
-  const series = allContent.filter(c => c.type === 'series' || c.type === 'tv').slice(0, 15);
-  const anime = allContent.filter(c => c.title.toLowerCase().includes('anime') || (c.type === 'series' && c.rating > 8.5)).slice(0, 10);
+  const releases = allContent.slice(0, 20);
+  const movies = allContent.filter(c => c.type === 'movie' || !c.type).slice(0, 50);
+  const series = allContent.filter(c => c.type === 'series' || c.type === 'tv').slice(0, 50);
+  const anime = allContent.filter(c => c.type === 'anime' || c.title.toLowerCase().includes('anime')).slice(0, 30);
 
   // Hero Update
   if (featured) {
