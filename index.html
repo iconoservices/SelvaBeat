@@ -123,37 +123,52 @@
     <div id="player-modal" class="player-modal">
       <div id="close-player" class="player-close">&times;</div>
 
-      <div class="video-container">
-        <!-- The Jungle Mist Loader -->
-        <div id="player-loader" class="loader-overlay">
-          <div class="loader-logo">SELVAFLIX</div>
-          <div class="loader-text">Explorando la selva...</div>
-        </div>
-
-        <!-- NEW: Your Custom Ad Space -->
-        <div id="ad-overlay" class="ad-overlay">
-          <div class="ad-content">
-            <span class="ad-badge">CONSEJO DE SUPERVIVENCIA 🕵️‍♂️</span>
-            <div id="ad-custom-html">
-              <h3 style="color: var(--primary); margin-bottom: 10px;">¡Guía del Explorador! 🥥</h3>
-              <p style="color: white; font-size: 0.85rem; margin-bottom: 10px;">
-                Los servidores gratuitos pueden abrir <b>ventanas nuevas</b> al dar Play.
-              </p>
-              <div
-                style="padding: 15px; background: rgba(255,122,0,0.05); border-radius: 10px; border: 1px dashed var(--primary); margin-bottom: 15px; text-align: left;">
-                <p style="font-size: 0.8rem; margin-bottom: 5px;">🔥 <b>¿Qué hacer?</b></p>
-                <ul style="font-size: 0.75rem; color: var(--text-muted); padding-left: 15px;">
-                  <li>Si se abre otra pestaña, <b>ciérrala</b> y vuelve aquí.</li>
-                  <li>Dale "Play" de nuevo. (A veces toma 2 intentos).</li>
-                  <li>¡Usa <b>Brave Browser</b> para saltarte todo esto!</li>
-                </ul>
-              </div>
-            </div>
-            <button id="skip-ad-btn" class="btn btn-primary" style="width: 100%;">Cargando...</button>
+      <div class="video-layout">
+        <div class="video-container">
+          <!-- The Jungle Mist Loader -->
+          <div id="player-loader" class="loader-overlay">
+            <div class="loader-logo">SELVAFLIX</div>
+            <div class="loader-text">Explorando la selva...</div>
           </div>
+
+          <!-- NEW: Your Custom Ad Space -->
+          <div id="ad-overlay" class="ad-overlay">
+            <div class="ad-content">
+              <span class="ad-badge">CONSEJO DE SUPERVIVENCIA 🕵️‍♂️</span>
+              <div id="ad-custom-html">
+                <h3 style="color: var(--primary); margin-bottom: 10px;">¡Guía del Explorador! 🥥</h3>
+                <p style="color: white; font-size: 0.85rem; margin-bottom: 10px;">
+                  Los servidores gratuitos pueden abrir <b>ventanas nuevas</b> al dar Play.
+                </p>
+                <div
+                  style="padding: 15px; background: rgba(255,122,0,0.05); border-radius: 10px; border: 1px dashed var(--primary); margin-bottom: 15px; text-align: left;">
+                  <p style="font-size: 0.8rem; margin-bottom: 5px;">🔥 <b>¿Qué hacer?</b></p>
+                  <ul style="font-size: 0.75rem; color: var(--text-muted); padding-left: 15px;">
+                    <li>Si se abre otra pestaña, <b>ciérrala</b> y vuelve aquí.</li>
+                    <li>Dale "Play" de nuevo. (A veces toma 2 intentos).</li>
+                    <li>¡Usa <b>Brave Browser</b> para saltarte todo esto!</li>
+                  </ul>
+                </div>
+              </div>
+              <button id="skip-ad-btn" class="btn btn-primary" style="width: 100%;">Cargando...</button>
+            </div>
+          </div>
+
+          <iframe id="player-iframe" src="" allowfullscreen></iframe>
         </div>
 
-        <iframe id="player-iframe" src="" allowfullscreen></iframe>
+        <!-- Guía Lateral Permanente (Desktop) -->
+        <div class="guide-sidebar">
+          <h3>📌 Tip de Supervivencia</h3>
+          <p>¿Se abrió otra ventana? <b>¡No entres en pánico!</b></p>
+          <ol>
+            <li>Ciérrala de inmediato.</li>
+            <li>Vuelve a esta ventana.</li>
+            <li>Haz clic en <b>Play</b> otra vez.</li>
+          </ol>
+          <p style="font-size: 0.7rem; color: var(--primary); margin-top: 15px;">🛡️ Recomendamos usar Brave Browser.
+          </p>
+        </div>
       </div>
 
       <!-- Server Switcher -->
