@@ -28,6 +28,13 @@ let movieDatabase = { trending: [] };
 let currentPlayerMovie = null;
 
 // Firebase Listener (Real-time sync)
+const yearSelect = document.getElementById('discover-year');
+if (yearSelect) {
+  const currentYear = new Date().getFullYear();
+  for (let i = currentYear; i >= 1980; i--) {
+    yearSelect.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`);
+  }
+}
 onSnapshot(moviesCol, (snapshot) => {
   movieDatabase.trending = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
   const hash = window.location.hash.replace('#', '');
@@ -541,8 +548,7 @@ function updateServer(serverKey, season = 1, episode = 1) {
     }
 
     iframe.src = url;
-    // Navigation for series enabled
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation');
+    iframe.removeAttribute('sandbox'); // Remove sandbox to allow the player to load normally
 
     iframe.onload = () => {
       setTimeout(() => {
@@ -860,16 +866,18 @@ function initApp() {
     heroTimer = setInterval(updateHeroCarousel, 5000); // Cambio cada 5 segundos
   }
 
-  const releases = allContent.slice(0, 20);
+  const releases = allContent.filter(c => c.type !== 'live').slice(0, 20);
   const movies = allContent.filter(c => c.type === 'movie' || !c.type).slice(0, 50);
   const series = allContent.filter(c => c.type === 'series' || c.type === 'tv').slice(0, 50);
-  const anime = allContent.filter(c => c.type === 'anime' || c.title.toLowerCase().includes('anime')).slice(0, 30);
+  const anime = allContent.filter(c => c.type === 'anime' || (c.title && c.title.toLowerCase().includes('anime'))).slice(0, 30);
+  const liveChannels = allContent.filter(c => c.type === 'live');
 
   // Rows Estilo Netflix
   if (releases.length > 0) renderRow('Lo más nuevo en SelvaFlix ✨', releases);
+  if (movies.length > 0) renderRow('Cosecha de Películas 🎬', movies);
   if (series.length > 0) renderRow('Series que no te puedes perder 🏆', series);
   if (anime.length > 0) renderRow('Zonas Anime y Calificadas ⛩️', anime);
-  if (movies.length > 0) renderRow('Cosecha de Películas 🎬', movies);
+  if (liveChannels.length > 0) renderRow('Canales en Vivo 🔴', liveChannels);
 }
 
 // Initial Setup

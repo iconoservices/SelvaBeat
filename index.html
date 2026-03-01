@@ -129,8 +129,10 @@
 
             <!-- Discovery Filters -->
             <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-              <input type="number" id="discover-year" class="form-control" placeholder="Año (Opcional)"
-                style="flex: 1; font-size: 0.75rem;">
+              <select id="discover-year" class="form-control" style="flex: 1; font-size: 0.75rem;">
+                <option value="">Cualquier Año</option>
+                <!-- Opciones añadidas por JS -->
+              </select>
               <select id="discover-genre" class="form-control" style="flex: 1; font-size: 0.75rem;">
                 <option value="">Cualquier Género</option>
                 <option value="28">Acción</option>
@@ -392,7 +394,7 @@
       <a href="#" class="nav-item" onclick="window.location.hash='live'">🔴</a>
     </nav>
   </div>
-  <script type="module" src="/src/main.js?v=2.3"></script>
+  <script type="module" src="/src/main.js?v=2.4"></script>
 </body>
 
 </html>
