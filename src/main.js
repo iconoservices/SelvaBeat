@@ -202,16 +202,15 @@ function updateServer(serverKey) {
   switch (serverKey) {
     case 'vidsrc': url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`; break;
     case 'superembed': url = `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`; break;
+    case 'smashy': url = `https://player.smashy.stream/movie/${tmdbId}`; break;
+    case 'autoembed': url = `https://autoembed.co/movie/tmdb/${tmdbId}`; break;
     case '2embed': url = `https://www.2embed.cc/embed/${tmdbId}`; break;
     default: url = `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
   }
 
-  // TESTING CONCLUSION:
-  // Vidsrc: Gives black screen 'Unavailable' or redirect error
-  // SuperEmbed: Throws 'Sandboxing is not allowed!' orange text message
-  // 2Embed: Video thumbnail loads, but Play button does absolutely nothing (popup blocked)
-  // Verdict: We must completely remove the sandbox attribute for any of them to work.
-  iframe.removeAttribute('sandbox');
+  iframe.src = url;
+  // Probando los limites del Sandbox: Bloqueando popups pero permitiendo lo basico
+  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
 
   iframe.onload = () => {
     setTimeout(() => {
