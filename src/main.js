@@ -207,8 +207,8 @@ function updateServer(serverKey) {
   }
 
   iframe.src = url;
-  // Permitir reproduccion retirando restricciones estrictas que rompen algunos servidores
-  iframe.removeAttribute('sandbox');
+  // Probando los limites del Sandbox: Bloqueando popups pero permitiendo lo basico
+  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
 
   iframe.onload = () => {
     setTimeout(() => {
@@ -285,4 +285,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('player-modal').style.display = 'none';
     document.getElementById('player-iframe').src = '';
   });
+
+  // Detectar dispositivo para recomendar bloqueador
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  const adblockLink = document.getElementById('adblock-link');
+  const adblockText = document.getElementById('adblock-text');
+
+  if (/android/i.test(userAgent)) {
+    adblockLink.href = "https://play.google.com/store/apps/details?id=com.brave.browser";
+    adblockLink.innerText = "Brave para Android";
+  } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+    adblockLink.href = "https://apps.apple.com/us/app/brave-private-web-browser/id1052879175";
+    adblockLink.innerText = "Brave para iPhone/iPad";
+  } else {
+    adblockLink.href = "https://brave.com/";
+    adblockLink.innerText = "Brave Browser o uBlock Origin";
+  }
 });
