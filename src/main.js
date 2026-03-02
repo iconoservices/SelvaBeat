@@ -633,15 +633,16 @@ window.searchTMDB = async function (query, isSuggestion = false) {
 
   try {
     let data;
+    const lang = document.getElementById('discover-lang')?.value || 'es-MX';
     // Si escriben solo números, lo buscamos directo por ID (Ej: 1032892)
     if (/^\d+$/.test(query.trim())) {
-      const res = await fetch(`${TMDB_URL}/movie/${query.trim()}?api_key=${TMDB_API_KEY}&language=es-ES`);
+      const res = await fetch(`${TMDB_URL}/movie/${query.trim()}?api_key=${TMDB_API_KEY}&language=${lang}`);
       if (!res.ok) throw new Error("No encontrado");
       const movie = await res.json();
       data = { results: [movie] };
     } else {
       // Búsqueda multi (Películas y Series)
-      const res = await fetch(`${TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=es-ES`);
+      const res = await fetch(`${TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=${lang}`);
       if (!res.ok) throw new Error("Error en API");
       data = await res.json();
     }
@@ -868,10 +869,10 @@ function updateServer(serverKey, season = 1, episode = 1) {
 
     switch (serverKey) {
       case 'latino':
-        // vidsrc.pro or vidapi.dev are better for Latino
+        // vidsrc.xyz con ds_lang=es es muy estable para forzar doblaje
         url = isSeries
-          ? `https://vidsrc.pro/embed/tv/${tmdbId}/${s}/${e}`
-          : `https://vidsrc.pro/embed/movie/${tmdbId}`;
+          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&ds_lang=es`
+          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&ds_lang=es`;
         break;
       case 'vidsrc':
         url = isSeries
