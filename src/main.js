@@ -105,7 +105,16 @@ window.selectAllVisible = (checked = true) => {
   document.querySelectorAll('#inventory-grid .coco-check').forEach(cb => {
     cb.checked = checked;
   });
-  window.updateSelectedCount?.();
+  window.updateSelectedCount();
+};
+
+window.updateSelectedCount = () => {
+  const selected = document.querySelectorAll('.coco-check:checked').length;
+  const btn = document.getElementById('btn-delete-selected');
+  const countSpan = document.getElementById('selected-count');
+
+  if (countSpan) countSpan.innerText = selected;
+  if (btn) btn.style.display = selected > 0 ? 'inline-block' : 'none';
 };
 
 function showView(active) {
@@ -279,7 +288,7 @@ function renderGallery(title, groups) {
 // Admin: Render Inventory Grid (Compact & Visual)
 let _allInventoryItems = [];
 let _inventoryPage = 1;
-const _inventoryPerPage = 20;
+const _inventoryPerPage = 50;
 window._brokenIds = new Set();
 
 function renderInventory() {
@@ -507,6 +516,7 @@ window.filterInventoryByCategory = () => {
   const type = document.getElementById('inventory-type-filter').value;
   const category = document.getElementById('inventory-filter').value;
   const langFilter = document.getElementById('inventory-lang-filter')?.value || 'all';
+  const genreFilter = document.getElementById('inventory-genre-filter')?.value || 'all';
   const searchInput = document.getElementById('inventory-search');
   const query = searchInput ? searchInput.value.toLowerCase() : '';
 
@@ -515,11 +525,18 @@ window.filterInventoryByCategory = () => {
     const matchType = type === 'all' || m.type === type || (type === 'movie' && !m.type);
     const matchLang = langFilter === 'all' || (m.lang || 'es-MX') === langFilter;
 
+    // Check genres (stored as array or string)
+    let matchGenre = true;
+    if (genreFilter !== 'all') {
+      const g = m.genres || m.genre_ids || [];
+      matchGenre = Array.isArray(g) ? g.map(String).includes(String(genreFilter)) : String(g) === String(genreFilter);
+    }
+
     let matchHealth = true;
     if (category === 'broken') matchHealth = window._brokenIds.has(m.id) || !m.img || (m.img && m.img.includes('placeholder'));
     if (category === 'missing') matchHealth = !m.tmdbId || m.tmdbId === "";
 
-    return matchSearch && matchType && matchLang && matchHealth;
+    return matchSearch && matchType && matchLang && matchGenre && matchHealth;
   });
 
   _inventoryPage = 1; // Reset pagination when filtering
@@ -546,10 +563,28 @@ window.bulkDeleteCurrentFilter = async () => {
   if (toDelete.length === 0) return;
   if (!confirm(`¿Estás seguro de borrar ${toDelete.length} coconas con error de tu selva? 🌴🗑️`)) return;
 
+  const overlay = document.getElementById('delete-progress-overlay');
+  const bar = document.getElementById('progress-bar-fill');
+  const text = document.getElementById('progress-percent');
+
+  if (overlay) overlay.style.display = 'flex';
+
+  let count = 0;
   for (const item of toDelete) {
-    await deleteDoc(doc(db, "movies", item.id));
+    try {
+      await deleteDoc(doc(db, "movies", item.id));
+      count++;
+      const percent = Math.round((count / toDelete.length) * 100);
+      if (bar) bar.style.width = `${percent}%`;
+      if (text) text.innerText = `${percent}% (${count}/${toDelete.length})`;
+    } catch (e) {
+      console.error("Error eliminando masivo:", item.id, e);
+    }
   }
-  alert(`¡Limpieza completada! Se fueron ${toDelete.length} intrusos.`);
+
+  if (overlay) overlay.style.display = 'none';
+  alert(`¡Limpieza completada! Se fueron ${count} intrusos.`);
+  if (bar) bar.style.width = "0%";
 };
 
 window.deleteSelectedCoconas = async () => {
