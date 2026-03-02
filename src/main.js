@@ -837,7 +837,7 @@ window.openPlayer = async (movieId) => {
   // Auto-load Latino server as default
   const s = document.getElementById('series-season') ? (document.getElementById('series-season').value || 1) : 1;
   const e = document.getElementById('series-episode') ? (document.getElementById('series-episode').value || 1) : 1;
-  updateServer('latino', s, e);
+  updateServer('latino-1', s, e);
 }
 
 function updateServer(serverKey, season = 1, episode = 1) {
@@ -868,29 +868,48 @@ function updateServer(serverKey, season = 1, episode = 1) {
     }
 
     switch (serverKey) {
-      case 'latino':
-        // vidsrc.xyz con ds_lang=es es muy estable para forzar doblaje
+      case 'latino-1':
         url = isSeries
           ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&ds_lang=es`
           : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&ds_lang=es`;
         break;
-      case 'vidsrc':
+      case 'latino-2':
         url = isSeries
-          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}`
-          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
+          ? `https://vidsrc.pro/embed/tv/${tmdbId}/${s}/${e}`
+          : `https://vidsrc.pro/embed/movie/${tmdbId}`;
         break;
-      case 'superembed':
+      case 'latino-3':
         url = isSeries
           ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}`
           : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
         break;
-      case 'smashy':
+      case 'latino-4':
         url = isSeries
           ? `https://player.smashy.stream/tv/${tmdbId}?s=${s}&e=${e}`
           : `https://player.smashy.stream/movie/${tmdbId}`;
         break;
+      case 'latino-5':
+        url = isSeries
+          ? `https://vidapi.dev/embed/tv/${tmdbId}/${s}/${e}`
+          : `https://vidapi.dev/embed/movie/${tmdbId}`;
+        break;
+      case 'latino-6':
+        url = isSeries
+          ? `https://autoembed.cc/tv/tmdb/${tmdbId}?s=${s}&e=${e}`
+          : `https://autoembed.cc/movie/tmdb/${tmdbId}`;
+        break;
+      case 'english-1':
+        url = isSeries
+          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}`
+          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
+        break;
+      case 'english-2':
+        url = isSeries
+          ? `https://www.2embed.cc/embed/${tmdbId}&s=${s}&e=${e}`
+          : `https://www.2embed.cc/embed/${tmdbId}`;
+        break;
       default:
-        url = `https://vidsrc.xyz/embed/${isSeries ? 'tv' : 'movie'}?tmdb=${tmdbId}&lang=es`;
+        url = `https://vidsrc.xyz/embed/${isSeries ? 'tv' : 'movie'}?tmdb=${tmdbId}`;
     }
 
     iframe.src = url;

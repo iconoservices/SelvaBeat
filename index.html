@@ -547,34 +547,57 @@
         </div>
 
         <!-- Server Switcher -->
-        <div class="server-switcher" id="server-switcher" style="margin-top: 0;">
-          <span style="color: var(--primary); font-weight: 700; margin-right: 10px; font-size: 0.8rem;">AUDIO:</span>
-          <button class="server-btn active" data-server="latino"
-            style="padding: 5px 12px; font-size: 0.75rem; background: rgba(39, 174, 96, 0.2); border-color: #27AE60;">🇲🇽
-            Latino / 🇪🇸 ES</button>
-          <button class="server-btn" data-server="vidsrc" style="padding: 5px 12px; font-size: 0.75rem;">🇺🇸 Inglés /
-            Sub</button>
-          <button class="server-btn" data-server="superembed"
-            style="padding: 5px 12px; font-size: 0.75rem;">SuperE</button>
-          <button class="server-btn" data-server="smashy" style="padding: 5px 12px; font-size: 0.75rem;">Smashy</button>
-          <!-- Download Button -->
-          <a id="download-btn" href="#" target="_blank" download
-            style="display:none; padding: 10px 22px; background: rgba(46,204,113,0.15); color: #2ECC71; border: 1px solid rgba(46,204,113,0.4); border-radius: 10px; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;"
-            title="Descargar">
-            ⬇️ Descargar
-          </a>
-        </div>
+        <div class="server-switcher" id="server-switcher"
+          style="margin-top: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto;">
 
-        <!-- Ad Blocker Notice -->
-        <div class="ad-notice">
-          <span id="adblock-text">🛡️ <b>Publicidad Intrusiva?</b> Para disfrutar la selva en paz usa </span><a
-            href="https://brave.com/" target="_blank" style="color: var(--primary);" id="adblock-link">Brave
-            Browser</a>.
+          <!-- Latino / ES Group -->
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span
+              style="color: var(--primary); font-weight: 800; font-size: 0.7rem; letter-spacing: 1px; min-width: 80px;">🇲🇽/🇪🇸
+              ESPAÑOL:</span>
+            <button class="server-btn active" data-server="latino-1" style="padding: 4px 12px; font-size: 0.7rem;">S1
+              (Vidsrc)</button>
+            <button class="server-btn" data-server="latino-2" style="padding: 4px 12px; font-size: 0.7rem;">S2
+              (Pro)</button>
+            <button class="server-btn" data-server="latino-3" style="padding: 4px 12px; font-size: 0.7rem;">S3
+              (SuperE)</button>
+            <button class="server-btn" data-server="latino-4" style="padding: 4px 12px; font-size: 0.7rem;">S4
+              (Smashy)</button>
+            <button class="server-btn" data-server="latino-5" style="padding: 4px 12px; font-size: 0.7rem;">S5
+              (VidLib)</button>
+            <button class="server-btn" data-server="latino-6" style="padding: 4px 12px; font-size: 0.7rem;">S6
+              (AutoE)</button>
+          </div>
+
+          <!-- English Group -->
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span
+              style="color: var(--text-muted); font-weight: 800; font-size: 0.7rem; letter-spacing: 1px; min-width: 80px;">🇺🇸
+              SUB / EN:</span>
+            <button class="server-btn" data-server="english-1" style="padding: 4px 12px; font-size: 0.7rem;">EN
+              (Default)</button>
+            <button class="server-btn" data-server="english-2" style="padding: 4px 12px; font-size: 0.7rem;">EN
+              (Secondary)</button>
+          </div>
         </div>
+        <!-- Download Button -->
+        <a id="download-btn" href="#" target="_blank" download
+          style="display:none; padding: 10px 22px; background: rgba(46,204,113,0.15); color: #2ECC71; border: 1px solid rgba(46,204,113,0.4); border-radius: 10px; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;"
+          title="Descargar">
+          ⬇️ Descargar
+        </a>
       </div>
 
+      <!-- Ad Blocker Notice -->
+      <div class="ad-notice">
+        <span id="adblock-text">🛡️ <b>Publicidad Intrusiva?</b> Para disfrutar la selva en paz usa </span><a
+          href="https://brave.com/" target="_blank" style="color: var(--primary);" id="adblock-link">Brave
+          Browser</a>.
+      </div>
     </div>
-    <script type="module" src="/src/main.js?v=2.5"></script>
+
+  </div>
+  <script type="module" src="/src/main.js?v=2.5"></script>
 </body>
 
 </html>
