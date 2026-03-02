@@ -1453,20 +1453,106 @@ window.suggestTVChannels = () => {
   status.innerText = "📺 Canales de TV Sugeridos (Links M3U8 públicos):";
 
   const suggestions = [
-    { name: "Telefe (AR)", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Telefe_logo.svg/1200px-Telefe_logo.svg.png", embed: "https://vcp.telefe.com/atv/telefe/telefe.m3u8" },
-    { name: "Azteca 7 (MX)", img: "https://upload.wikimedia.org/wikipedia/commons/5/52/TV_Azteca_7_logo.png", embed: "https://d1f8p81k2m2b4y.cloudfront.net/out/v1/98157774fd6e4a6fa83917452d37803d/index.m3u8" },
-    { name: "NASA TV", img: "https://www.nasa.gov/wp-content/themes/nasa/assets/images/nasa-logo.svg", embed: "https://ntvpublic.akamaized.net/hls/live/2023153/ntv-public/index.m3u8" }
+    { title: "Telefe (AR)", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Telefe_logo.svg/1200px-Telefe_logo.svg.png", embed: "https://vcp.telefe.com/atv/telefe/telefe.m3u8" },
+    { title: "Azteca 7 (MX)", img: "https://upload.wikimedia.org/wikipedia/commons/5/52/TV_Azteca_7_logo.png", embed: "https://d1f8p81k2m2b4y.cloudfront.net/out/v1/98157774fd6e4a6fa83917452d37803d/index.m3u8" },
+    { title: "NASA TV", img: "https://www.nasa.gov/wp-content/themes/nasa/assets/images/nasa-logo.svg", embed: "https://ntvpublic.akamaized.net/hls/live/2023153/ntv-public/index.m3u8" }
   ];
 
   list.innerHTML = suggestions.map(s => `
      <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--glass-border);">
         <img src="${s.img}" style="width: 40px; height: 40px; object-fit: contain; background:#fff; border-radius: 4px;">
         <div style="flex: 1;">
-          <p style="font-size: 0.75rem; font-weight: bold; margin-bottom: 2px;">${s.name}</p>
+          <p style="font-size: 0.75rem; font-weight: bold; margin-bottom: 2px;">${s.title}</p>
           <button onclick="window.quickSeedManual(${JSON.stringify(s).replace(/"/g, '&quot;')}, 'live')" style="background: #2ECC71; border: none; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; cursor: pointer;">➕ Agregar Canal</button>
         </div>
       </div>
   `).join('');
+};
+
+window.discoverM3U = async () => {
+  const container = document.getElementById('discover-container');
+  const list = document.getElementById('discover-list');
+  const status = document.getElementById('discover-status');
+  if (!container || !list || !status) return;
+
+  container.style.display = 'block';
+  status.innerText = "📡 Cargando canales desde GitHub (IPTV-Org Latam)...";
+  list.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">🔍 Extrayendo el corazón de los satélites...</p>';
+
+  try {
+    const res = await fetch('https://iptv-org.github.io/iptv/regions/latam.m3u');
+    const m3uText = await res.text();
+    const channels = window.parseM3U(m3uText).slice(0, 100); // Mostramos los primeros 100
+
+    if (channels.length === 0) { status.innerText = "❌ No se encontraron canales válidos."; return; }
+
+    status.innerText = `✅ Encontrados ${channels.length} canales en Latinoamérica:`;
+    list.innerHTML = channels.map(c => {
+      const cleanData = { title: c.name, img: c.logo || 'https://via.placeholder.com/100x100?text=TV', embed: c.url };
+      return `
+        <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--glass-border);">
+            <img src="${cleanData.img}" style="width: 35px; height: 35px; object-fit: contain; background:#fff; border-radius: 4px;">
+            <div style="flex: 1; overflow: hidden;">
+              <p style="font-size: 0.7rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom:2px;">${c.name}</p>
+              <button onclick="window.quickSeedManual(${JSON.stringify(cleanData).replace(/"/g, '&quot;')}, 'live')" style="background: #2ECC71; border: none; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; cursor: pointer;">➕ Agregar</button>
+            </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    status.innerText = "❌ Error al cargar lista de GitHub.";
+  }
+};
+
+window.parseM3U = (data) => {
+  const lines = data.split('\n');
+  const channels = [];
+  let currentChannel = {};
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('#EXTINF:')) {
+      const name = line.split(',').pop();
+      const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+      currentChannel = { name, logo: logoMatch ? logoMatch[1] : null };
+    } else if (line.startsWith('http')) {
+      currentChannel.url = line;
+      if (currentChannel.name) channels.push(currentChannel);
+      currentChannel = {};
+    }
+  }
+  return channels;
+};
+
+window.autoSuggestLogo = async () => {
+  const title = document.getElementById('m-title').value;
+  const imgInput = document.getElementById('m-img');
+  const preview = document.getElementById('m-img-preview');
+  if (!title) { alert("¡Dime el nombre del canal primero! 🐒"); return; }
+
+  const originalText = title;
+  imgInput.value = "🔍 Buscando logo...";
+
+  try {
+    // Buscamos en Wikipedia / Clearbit para marcas conocidas
+    const cleanName = title.toLowerCase().replace(/\s+/g, '').replace('tv', '').replace('live', '');
+    const logoUrl = `https://logo.clearbit.com/${cleanName}.com`;
+
+    // Verificamos si existe el logo de clearbit
+    const check = await fetch(logoUrl, { method: 'HEAD' });
+    if (check.ok) {
+      imgInput.value = logoUrl;
+      if (preview) preview.src = logoUrl;
+      return;
+    }
+
+    // Si falla, abrimos búsqueda en duckduckgo imágenes para el usuario
+    window.open(`https://duckduckgo.com/?q=${encodeURIComponent(title + " logo png")}&iax=images&ia=images`, '_blank');
+    imgInput.value = "";
+  } catch (e) {
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(title + " logo png")}&tbm=isch`, '_blank');
+    imgInput.value = "";
+  }
 };
 
 // Initial Setup
@@ -1474,10 +1560,17 @@ document.addEventListener('DOMContentLoaded', () => {
   handleRouting();
   window.addEventListener('hashchange', handleRouting);
 
-  const btnDiscoverLive = document.getElementById('btn-discover-live');
-  if (btnDiscoverLive) btnDiscoverLive.onclick = window.suggestTVChannels;
+  const btnDiscoverMovies = document.getElementById('btn-discover-movies');
+  const btnDiscoverSeries = document.getElementById('btn-discover-series');
+  const btnDiscoverM3U = document.getElementById('btn-discover-m3u');
+  const btnDivLive = document.getElementById('btn-discover-live');
+  const btnConfirmSeed = document.getElementById('btn-confirm-mass-seed');
 
-  document.getElementById('global-search').addEventListener('input', (e) => handleGlobalSearch(e.target.value));
+  if (btnDiscoverMovies) btnDiscoverMovies.addEventListener('click', () => window.massSeedMovies('movie'));
+  if (btnDiscoverSeries) btnDiscoverSeries.addEventListener('click', () => window.massSeedMovies('series'));
+  if (btnDiscoverM3U) btnDiscoverM3U.addEventListener('click', () => window.discoverM3U());
+  if (btnDivLive) btnDivLive.addEventListener('click', () => window.suggestTVChannels());
+  if (btnConfirmSeed) btnConfirmSeed.addEventListener('click', () => window.confirmBatchSeed());
 
   document.getElementById('btn-tmdb-search').addEventListener('click', () => {
     const query = document.getElementById('tmdb-search-input').value;
@@ -1575,20 +1668,6 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.style.display = 'none';
     iframe.src = ""; // Detener audio/video al cerrar
   });
-
-  // Discovery Handlers — use onclick via window.* so they work even if elements re-render
-  const btnDiscoverMovies = document.getElementById('btn-discover-movies');
-  const btnDiscoverSeries = document.getElementById('btn-discover-series');
-  const btnDivLive = document.getElementById('btn-discover-live');
-  const btnConfirmSeed = document.getElementById('btn-confirm-mass-seed');
-
-  if (btnDiscoverMovies) btnDiscoverMovies.addEventListener('click', () => window.massSeedMovies('movie'));
-  if (btnDiscoverSeries) btnDiscoverSeries.addEventListener('click', () => window.massSeedMovies('series'));
-  if (btnDivLive) btnDivLive.addEventListener('click', () => window.suggestTVChannels());
-  if (btnConfirmSeed) btnConfirmSeed.addEventListener('click', () => window.confirmBatchSeed());
-
-  // Also expose discoverContent as window for onclick fallback
-  window.discoverLive = () => discoverContent('live');
 
   // Detectar dispositivo para recomendar bloqueador (opcional mantenido temporalmente si quiere recomdar brave globalmente, 
   // pero ya no hay pantalla de anuncios forzada)
