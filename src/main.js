@@ -51,21 +51,61 @@ onSnapshot(moviesCol, (snapshot) => {
 
 
 // ─── Filter / Routing ────────────────────────────────────────────
+let _currentFilter = '';   // 'movies' | 'series' | 'live' | ''
+let _currentGenre = '';   // TMDB genre id string or ''
+
 window.setFilter = (type) => {
+  _currentFilter = type;
+  _currentGenre = '';   // reset genre on main filter change
+
   const adminEl = document.getElementById('admin-view');
   const homeEl = document.getElementById('home-view');
   if (adminEl) adminEl.style.display = 'none';
   if (homeEl) homeEl.style.display = 'block';
 
-  // Update filter pill active state
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  // Update filter pill active state (only main pills)
+  ['filter-all', 'filter-movies', 'filter-series', 'filter-live'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
   const idMap = { '': 'filter-all', 'movies': 'filter-movies', 'series': 'filter-series', 'live': 'filter-live' };
   document.getElementById(idMap[type] || 'filter-all')?.classList.add('active');
 
-  // Update hash silently (no full reload)
-  history.replaceState(null, '', type ? `#${type}` : '#');
+  // Show genre sub-bar only in movies/series view; reset genre pills
+  const genreBar = document.getElementById('genre-bar');
+  if (genreBar) {
+    genreBar.style.display = (type === 'movies' || type === 'series') ? 'flex' : 'none';
+    genreBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('genre-all')?.classList.add('active');
+  }
 
-  initApp(type);
+  history.replaceState(null, '', type ? `#${type}` : '#');
+  initApp(type, '');
+};
+
+window.setGenre = (genreId) => {
+  _currentGenre = genreId;
+
+  // Update genre pill active state
+  const genreBar = document.getElementById('genre-bar');
+  if (genreBar) {
+    genreBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    // Find clicked button (match by onclick attr genreId)
+    genreBar.querySelectorAll('.filter-btn').forEach(b => {
+      const oc = b.getAttribute('onclick') || '';
+      if (oc.includes(`'${genreId}'`) || (genreId === '' && b.id === 'genre-all')) {
+        b.classList.add('active');
+      }
+    });
+  }
+  initApp(_currentFilter, genreId);
+};
+
+// Admin: Select all visible inventory cards
+window.selectAllVisible = (checked = true) => {
+  document.querySelectorAll('#inventory-grid .coco-check').forEach(cb => {
+    cb.checked = checked;
+  });
+  window.updateSelectedCount?.();
 };
 
 function showView(active) {
@@ -87,11 +127,12 @@ function handleRouting() {
     renderInventory();
   } else {
     showView('home-view');
-    // Sync filter pill
     const idMap = { '': 'filter-all', 'movies': 'filter-movies', 'series': 'filter-series', 'live': 'filter-live' };
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    ['filter-all', 'filter-movies', 'filter-series', 'filter-live'].forEach(id => document.getElementById(id)?.classList.remove('active'));
     document.getElementById(idMap[hash] || 'filter-all')?.classList.add('active');
-    initApp(hash);
+    const genreBar = document.getElementById('genre-bar');
+    if (genreBar) genreBar.style.display = (hash === 'movies' || hash === 'series') ? 'flex' : 'none';
+    initApp(hash, '');
   }
 }
 
@@ -1131,6 +1172,7 @@ window.massSeedMovies = async (contentType) => {
             tmdbId: tmdbIdStr,
             year: (s.release_date || s.first_air_date || '2024').split('-')[0],
             rating: s.vote_average?.toFixed(1) || '7.5',
+            genres: (s.genre_ids || []).map(String),
             type: type,
             lang: lang
           });
@@ -1278,7 +1320,7 @@ function startHeroAutoRotation() {
   }, 10000); // Rota cada 10 segundos
 }
 
-function initApp(filterType = '') {
+function initApp(filterType = '', genreId = '') {
   // Actividad: Vista de página
   collectUserData("page_view", { page: filterType || 'home' });
 
@@ -1286,12 +1328,20 @@ function initApp(filterType = '') {
   container.innerHTML = '';
 
   // ORDEN INTELIGENTE: Salud -> Fecha de Creación
-  const allContent = [...movieDatabase.trending].sort((a, b) => {
+  let allContent = [...movieDatabase.trending].sort((a, b) => {
     const healthA = window._brokenIds.has(a.id) ? 0 : 1;
     const healthB = window._brokenIds.has(b.id) ? 0 : 1;
     if (healthA !== healthB) return healthB - healthA;
     return (b.createdAt || 0) - (a.createdAt || 0);
   });
+
+  // Apply genre filter if set (genre stored as array or single string in item.genres)
+  if (genreId) {
+    allContent = allContent.filter(c => {
+      const g = c.genres || c.genre_ids || [];
+      return Array.isArray(g) ? g.map(String).includes(String(genreId)) : String(g) === String(genreId);
+    });
+  }
 
   // Pool de Recomendados (Hero Carousel - 3 items)
   heroPool = allContent.filter(c => !window._brokenIds.has(c.id));
@@ -1299,7 +1349,7 @@ function initApp(filterType = '') {
   if (filterType === 'series') heroPool = heroPool.filter(c => c.type === 'series' || c.type === 'tv' || c.type === 'anime');
   else if (filterType === 'live') heroPool = heroPool.filter(c => c.type === 'live');
   else if (filterType === 'movies') heroPool = heroPool.filter(c => c.type === 'movie' || !c.type);
-  else heroPool = heroPool.slice(0, 10); // En el Home (vacío), mostramos mix de lo más reciente que no esté roto
+  else heroPool = heroPool.slice(0, 10);
 
   heroPool = heroPool.slice(0, 3);
 
@@ -1311,25 +1361,21 @@ function initApp(filterType = '') {
     document.getElementById('hero-section').style.display = 'none';
   }
 
-  const releases = allContent.filter(c => c.type !== 'live').slice(0, 20);
-  const movies = allContent.filter(c => c.type === 'movie' || !c.type).slice(0, 50);
-  const series = allContent.filter(c => c.type === 'series' || c.type === 'tv').slice(0, 50);
-  const anime = allContent.filter(c => c.type === 'anime' || (c.title && c.title.toLowerCase().includes('anime'))).slice(0, 30);
-  const liveChannels = allContent.filter(c => c.type === 'live');
-
   // Rows / Gallery based on filter
   if (filterType === 'movies') {
-    // Gallery mode — full grid
     const movies = allContent.filter(c => c.type === 'movie' || !c.type);
-    renderGallery('🎬 Películas', [{ label: '🎬 Películas', items: movies }]);
+    if (movies.length > 0) {
+      renderGallery('🎬 Películas', [{ label: `🎬 Películas${genreId ? ' · filtradas' : ''}`, items: movies }]);
+    } else {
+      container.insertAdjacentHTML('beforeend', '<p style="padding:80px;text-align:center;color:var(--text-muted);">No hay películas con ese filtro 🌿</p>');
+    }
 
   } else if (filterType === 'series') {
-    // Gallery mode — full grid, grouped by series + anime
     const series = allContent.filter(c => c.type === 'series' || c.type === 'tv');
     const anime = allContent.filter(c => c.type === 'anime');
     renderGallery('🏆 Series & Anime', [
-      { label: '🏆 Series', items: series },
-      { label: '⛩️ Anime', items: anime }
+      { label: `🏆 Series${genreId ? ' · filtradas' : ''}`, items: series },
+      { label: `⛩️ Anime`, items: anime }
     ]);
 
   } else if (filterType === 'live') {
