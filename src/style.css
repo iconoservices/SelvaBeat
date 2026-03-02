@@ -515,6 +515,11 @@ h3,
   background: rgba(255, 255, 255, 0.1);
 }
 
+.lupa-btn:hover {
+  background: #2980B9 !important;
+  transform: scale(1.05);
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;

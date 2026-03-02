@@ -213,11 +213,11 @@
                   <label>URL de la Imagen (Póster)</label>
                   <div style="display: flex; gap: 5px;">
                     <input type="url" id="m-img" class="form-control" placeholder="https://...">
+                    <button type="button" class="btn lupa-btn"
+                      style="background: #3498DB; padding: 5px 12px; font-size: 0.9rem; color: white; border: none; font-weight: bold; min-width: 40px;"
+                      onclick="window.autoSuggestLogo()" title="🔍 Sugerir Logo de Internet">🔍</button>
                     <button type="button" class="btn"
-                      style="background: #3498DB; padding: 5px 10px; font-size: 0.7rem; color: white; border: none;"
-                      onclick="window.openLogoSearch()">🌐 Buscar</button>
-                    <button type="button" class="btn"
-                      style="background: #27AE60; padding: 5px 10px; font-size: 0.7rem; color: white; border: none;"
+                      style="background: #27AE60; padding: 5px 12px; font-size: 0.75rem; color: white; border: none;"
                       onclick="document.getElementById('m-file').click()">📤 Subir</button>
                     <input type="file" id="m-file" accept="image/*" style="display: none;"
                       onchange="window.handleImageUpload(this.files[0])">
