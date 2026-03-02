@@ -622,6 +622,48 @@ window.selectAllCoconas = (checked) => {
   document.querySelectorAll('.coco-check').forEach(c => c.checked = checked);
 };
 
+window.runBotHealthCheck = async () => {
+  const items = movieDatabase.trending;
+  if (items.length === 0) { alert("¡La selva está vacía! No hay nada que revisar. 🌴"); return; }
+
+  if (!confirm("¿Deseas activar el Bot Explorador para buscar enlaces perdidos o imágenes rotas? 🌴🤖")) return;
+
+  const overlay = document.getElementById('delete-progress-overlay');
+  const bar = document.getElementById('progress-bar-fill');
+  const text = document.getElementById('progress-percent');
+  const statusText = document.getElementById('progress-text');
+
+  if (statusText) statusText.innerText = "Robot Explorador escaneando la selva... 🤖🔎";
+  if (overlay) overlay.style.display = 'flex';
+
+  let brokenCount = 0;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    let isBroken = false;
+
+    // Reglas del Bot para marcar como sospechoso:
+    if (!item.img || item.img.includes('placeholder')) isBroken = true;
+    if (!item.title) isBroken = true;
+    if ((item.type === 'movie' || item.type === 'series') && !item.tmdbId) isBroken = true;
+    if (item.type === 'live' && !item.embed) isBroken = true;
+
+    if (isBroken) {
+      window.markAsBroken(item.id);
+      brokenCount++;
+    }
+
+    const percent = Math.round(((i + 1) / items.length) * 100);
+    if (bar) bar.style.width = `${percent}%`;
+    if (text) text.innerText = `${percent}% (${i + 1}/${items.length})`;
+  }
+
+  setTimeout(() => {
+    if (overlay) overlay.style.display = 'none';
+    alert(`🤖 Informe del Robot:\n- Escaneadas: ${items.length} coconas.\n- Sospechosas detectadas: ${brokenCount}.\n\nUsa el filtro 'Salud -> Con Errores' para revisarlas.`);
+    if (window.filterInventoryByCategory) window.filterInventoryByCategory();
+  }, 800);
+};
+
 // TMDB Search Integration
 // --- TMDB SEARCH (SAFE SELECTION) ---
 let _tmdbLastResults = [];
@@ -721,10 +763,14 @@ function startPlayer(movie) {
   collectUserData("play_start", { title: movie.title, type: movie.type });
   if (movie.tmdbId) {
     document.getElementById('server-switcher').style.display = 'flex';
-    updateServer('vidsrc');
+    // Load default latino-1
+    const s = document.getElementById('series-season') ? (document.getElementById('series-season').value || 1) : 1;
+    const e = document.getElementById('series-episode') ? (document.getElementById('series-episode').value || 1) : 1;
+    updateServer('latino-1', s, e);
   } else {
     document.getElementById('server-switcher').style.display = 'none';
-    document.getElementById('player-iframe').src = movie.embed || "";
+    const iframe = document.getElementById('player-iframe');
+    iframe.src = movie.embed || "";
   }
 }
 
@@ -743,25 +789,41 @@ function startWarningOverlay(movie) {
 
   if (adOverlay) adOverlay.style.display = 'flex';
 
+  const isAdmin = document.getElementById('admin-view')?.style.display === 'block';
   let timeLeft = 5;
-  if (skipBtn) {
-    skipBtn.innerText = `Cerrando en ${timeLeft}...`;
-    skipBtn.disabled = true;
-    skipBtn.style.cursor = "not-allowed";
-    skipBtn.style.opacity = "0.7";
-  }
 
   const timer = setInterval(() => {
     timeLeft--;
-    if (skipBtn) skipBtn.innerText = `Cerrando en ${timeLeft}...`;
+    if (skipBtn && !isAdmin) skipBtn.innerText = `Cerrando en ${timeLeft}...`;
 
     if (timeLeft <= 0) {
       clearInterval(timer);
-      localStorage.setItem(storageKey, 'true');
-      if (adOverlay) adOverlay.style.display = 'none';
-      startPlayer(movie);
+      finish();
     }
   }, 1000);
+
+  function finish() {
+    clearInterval(timer);
+    localStorage.setItem(storageKey, 'true');
+    if (adOverlay) adOverlay.style.display = 'none';
+    startPlayer(movie);
+  }
+
+  if (skipBtn) {
+    if (isAdmin) {
+      skipBtn.innerText = "⚡ Saltar y Comprobar (Modo Admin)";
+      skipBtn.disabled = false;
+      skipBtn.style.cursor = "pointer";
+      skipBtn.style.opacity = "1";
+      skipBtn.onclick = finish;
+    } else {
+      skipBtn.innerText = `Cerrando en ${timeLeft}...`;
+      skipBtn.disabled = true;
+      skipBtn.style.cursor = "not-allowed";
+      skipBtn.style.opacity = "0.7";
+      skipBtn.onclick = null;
+    }
+  }
 }
 
 window.closeWarningOverlay = () => {
@@ -834,10 +896,7 @@ window.openPlayer = async (movieId) => {
 
   startWarningOverlay(movie);
 
-  // Auto-load Latino server as default
-  const s = document.getElementById('series-season') ? (document.getElementById('series-season').value || 1) : 1;
-  const e = document.getElementById('series-episode') ? (document.getElementById('series-episode').value || 1) : 1;
-  updateServer('latino-1', s, e);
+  // No immediate updateServer here. startWarningOverlay -> startPlayer will handle it after 5 seconds.
 }
 
 function updateServer(serverKey, season = 1, episode = 1) {
@@ -869,34 +928,36 @@ function updateServer(serverKey, season = 1, episode = 1) {
 
     switch (serverKey) {
       case 'latino-1':
+        // vidsrc.xyz con ds_lang=es es muy estable para forzar doblaje
         url = isSeries
           ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&ds_lang=es`
           : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&ds_lang=es`;
         break;
       case 'latino-2':
+        // vidsrc.to es la versión moderna y muy estable
+        url = isSeries
+          ? `https://vidsrc.to/embed/tv/${tmdbId}/${s}/${e}`
+          : `https://vidsrc.to/embed/movie/${tmdbId}`;
+        break;
+      case 'latino-3':
         url = isSeries
           ? `https://vidsrc.pro/embed/tv/${tmdbId}/${s}/${e}`
           : `https://vidsrc.pro/embed/movie/${tmdbId}`;
         break;
-      case 'latino-3':
+      case 'latino-4':
         url = isSeries
           ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}`
           : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
         break;
-      case 'latino-4':
+      case 'latino-5':
         url = isSeries
           ? `https://player.smashy.stream/tv/${tmdbId}?s=${s}&e=${e}`
           : `https://player.smashy.stream/movie/${tmdbId}`;
         break;
-      case 'latino-5':
+      case 'latino-6':
         url = isSeries
           ? `https://vidapi.dev/embed/tv/${tmdbId}/${s}/${e}`
           : `https://vidapi.dev/embed/movie/${tmdbId}`;
-        break;
-      case 'latino-6':
-        url = isSeries
-          ? `https://autoembed.cc/tv/tmdb/${tmdbId}?s=${s}&e=${e}`
-          : `https://autoembed.cc/movie/tmdb/${tmdbId}`;
         break;
       case 'english-1':
         url = isSeries
