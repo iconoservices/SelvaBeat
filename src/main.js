@@ -832,6 +832,11 @@ window.openPlayer = async (movieId) => {
   }
 
   startWarningOverlay(movie);
+
+  // Auto-load Latino server as default
+  const s = document.getElementById('series-season') ? (document.getElementById('series-season').value || 1) : 1;
+  const e = document.getElementById('series-episode') ? (document.getElementById('series-episode').value || 1) : 1;
+  updateServer('latino', s, e);
 }
 
 function updateServer(serverKey, season = 1, episode = 1) {
@@ -862,25 +867,26 @@ function updateServer(serverKey, season = 1, episode = 1) {
     }
 
     switch (serverKey) {
+      case 'latino':
+        // vidsrc.pro or vidapi.dev are better for Latino
+        url = isSeries
+          ? `https://vidsrc.pro/embed/tv/${tmdbId}/${s}/${e}`
+          : `https://vidsrc.pro/embed/movie/${tmdbId}`;
+        break;
       case 'vidsrc':
         url = isSeries
-          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&lang=es`
-          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&lang=es`;
+          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}`
+          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}`;
         break;
       case 'superembed':
         url = isSeries
-          ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}&lang=es`
-          : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&lang=es`;
+          ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}`
+          : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
         break;
       case 'smashy':
         url = isSeries
-          ? `https://player.smashy.stream/tv/${tmdbId}?s=${s}&e=${e}&lang=es`
-          : `https://player.smashy.stream/movie/${tmdbId}?lang=es`;
-        break;
-      case 'autoembed':
-        url = isSeries
-          ? `https://autoembed.co/tv/tmdb/${tmdbId}?s=${s}&e=${e}&lang=es`
-          : `https://autoembed.co/movie/tmdb/${tmdbId}?lang=es`;
+          ? `https://player.smashy.stream/tv/${tmdbId}?s=${s}&e=${e}`
+          : `https://player.smashy.stream/movie/${tmdbId}`;
         break;
       default:
         url = `https://vidsrc.xyz/embed/${isSeries ? 'tv' : 'movie'}?tmdb=${tmdbId}&lang=es`;
