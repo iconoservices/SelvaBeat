@@ -626,14 +626,14 @@ window.runBotHealthCheck = async () => {
   const items = movieDatabase.trending;
   if (items.length === 0) { alert("¡La selva está vacía! No hay nada que revisar. 🌴"); return; }
 
-  if (!confirm("¿Deseas activar el Bot Explorador para buscar enlaces perdidos o imágenes rotas? 🌴🤖")) return;
+  if (!confirm("🤖 ACTIVAR BOT EXPLORADOR:\nOjo: Revisaré metadatos, imágenes y probaré los enlaces directos (Live TV). ¿Continuar? 🔍🌴")) return;
 
   const overlay = document.getElementById('delete-progress-overlay');
   const bar = document.getElementById('progress-bar-fill');
   const text = document.getElementById('progress-percent');
   const statusText = document.getElementById('progress-text');
 
-  if (statusText) statusText.innerText = "Robot Explorador escaneando la selva... 🤖🔎";
+  if (statusText) statusText.innerText = "Robot Explorador analizando enlaces y datos... 🤖🔎";
   if (overlay) overlay.style.display = 'flex';
 
   let brokenCount = 0;
@@ -641,11 +641,27 @@ window.runBotHealthCheck = async () => {
     const item = items[i];
     let isBroken = false;
 
-    // Reglas del Bot para marcar como sospechoso:
+    // 1. Reglas básicas:
     if (!item.img || item.img.includes('placeholder')) isBroken = true;
     if (!item.title) isBroken = true;
     if ((item.type === 'movie' || item.type === 'series') && !item.tmdbId) isBroken = true;
-    if (item.type === 'live' && !item.embed) isBroken = true;
+
+    // 2. Revisión de Enlaces Caídos (Solo links directos como Live TV):
+    if (!isBroken && item.embed && item.embed.startsWith('http')) {
+      // No podemos revisar iframes o TMDB vidsrc por CORS, 
+      // pero si es un link directo de m3u8 o mp4 (Live TV), probamos un "ping":
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 seg max
+        const res = await fetch(item.embed, { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+        clearTimeout(timeoutId);
+      } catch (e) {
+        // Si falla el fetch totalmente (ej: dominio no existe), es link caído de verdad
+        if (e.name === 'AbortError' || e.message.includes('Failed to fetch')) {
+          isBroken = true;
+        }
+      }
+    }
 
     if (isBroken) {
       window.markAsBroken(item.id);
@@ -659,7 +675,7 @@ window.runBotHealthCheck = async () => {
 
   setTimeout(() => {
     if (overlay) overlay.style.display = 'none';
-    alert(`🤖 Informe del Robot:\n- Escaneadas: ${items.length} coconas.\n- Sospechosas detectadas: ${brokenCount}.\n\nUsa el filtro 'Salud -> Con Errores' para revisarlas.`);
+    alert(`🤖 INFORME DE LA EXPEDICIÓN:\n- Revisadas: ${items.length} coconas.\n- Detectadas con fallas/caídas: ${brokenCount}.\n\nUsa el filtro 'Salud -> Con Errores' para limpiarlas.`);
     if (window.filterInventoryByCategory) window.filterInventoryByCategory();
   }, 800);
 };
@@ -928,26 +944,26 @@ function updateServer(serverKey, season = 1, episode = 1) {
 
     switch (serverKey) {
       case 'latino-1':
-        // vidsrc.xyz con ds_lang=es es muy estable para forzar doblaje
+        // vidsrc.me es superior reconociendo el audio doblado automáticamente
         url = isSeries
-          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&ds_lang=es`
-          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&ds_lang=es`;
+          ? `https://vidsrc.me/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&ds_lang=es`
+          : `https://vidsrc.me/embed/movie?tmdb=${tmdbId}&ds_lang=es`;
         break;
       case 'latino-2':
-        // vidsrc.to es la versión moderna y muy estable
+        // vidsrc.xyz con ds_lang=es y lang=es para asegurar
+        url = isSeries
+          ? `https://vidsrc.xyz/embed/tv?tmdb=${tmdbId}&season=${s}&episode=${e}&ds_lang=es&lang=es`
+          : `https://vidsrc.xyz/embed/movie?tmdb=${tmdbId}&ds_lang=es&lang=es`;
+        break;
+      case 'latino-3':
         url = isSeries
           ? `https://vidsrc.to/embed/tv/${tmdbId}/${s}/${e}`
           : `https://vidsrc.to/embed/movie/${tmdbId}`;
         break;
-      case 'latino-3':
+      case 'latino-4':
         url = isSeries
           ? `https://vidsrc.pro/embed/tv/${tmdbId}/${s}/${e}`
           : `https://vidsrc.pro/embed/movie/${tmdbId}`;
-        break;
-      case 'latino-4':
-        url = isSeries
-          ? `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1&s=${s}&e=${e}`
-          : `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`;
         break;
       case 'latino-5':
         url = isSeries
