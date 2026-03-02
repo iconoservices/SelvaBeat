@@ -547,7 +547,10 @@ window.selectAllCoconas = (checked) => {
 };
 
 // TMDB Search Integration
-async function searchTMDB(query, isSuggestion = false) {
+// --- TMDB SEARCH (SAFE SELECTION) ---
+let _tmdbLastResults = [];
+
+window.searchTMDB = async function (query, isSuggestion = false) {
   if (!query) return;
   const resultsDiv = document.getElementById('tmdb-results');
   if (!isSuggestion) resultsDiv.innerHTML = '<p style="color: var(--primary);">Buscando en Hollywood... 📡</p>';
@@ -572,47 +575,52 @@ async function searchTMDB(query, isSuggestion = false) {
       return;
     }
 
+    // Save to global storage to avoid attribute escaping issues
+    _tmdbLastResults = data.results.slice(0, 5);
+
     resultsDiv.innerHTML = (isSuggestion ? '<p style="width:100%; font-size:0.8rem; color:var(--primary); margin-bottom:5px;">💡 Sugerencias de Imagen:</p>' : '') +
-      data.results.slice(0, 5).map(m => {
+      _tmdbLastResults.map((m, index) => {
         const title = m.title || m.name || "Sin Título";
         const type = m.media_type === 'tv' ? 'series' : 'movie';
-        const imgUrl = TMDB_IMG_URL + m.poster_path;
-
-        if (isSuggestion) {
-          return `
-          <div class="tmdb-item" onclick="window.suggestImage('${imgUrl}')" style="min-width: 80px;">
-            <img src="${imgUrl}" alt="${title}" style="height: 120px;" onerror="this.src='https://via.placeholder.com/80x120'">
-          </div>
-        `;
-        }
+        const imgUrl = m.poster_path ? (TMDB_IMG_URL + m.poster_path) : 'https://via.placeholder.com/150x225?text=SIN+POSTER';
 
         return `
-        <div class="tmdb-item" onclick="window.selectTMDBMovie(${JSON.stringify(m).replace(/"/g, '&quot;')})">
-          <img src="${imgUrl}" alt="${title}" onerror="this.src='https://via.placeholder.com/150x225'">
-          <p style="font-size:0.7rem;">[${type === 'series' ? 'Serie' : 'Peli'}]</p>
-          <p>${title}</p>
+        <div class="tmdb-item" onclick="window.selectTMDBMovie(${index})" style="cursor:pointer; min-width:100px; text-align:center;">
+          <img src="${imgUrl}" alt="${title}" style="height:150px; border-radius:8px; object-fit:cover; margin-bottom:5px;" onerror="this.src='https://via.placeholder.com/150x225'">
+          <p style="font-size:0.65rem; color:var(--primary); font-weight:bold;">[${type === 'series' ? 'Serie' : 'Peli'}]</p>
+          <p style="font-size:0.7rem; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</p>
         </div>
       `;
       }).join('');
+
   } catch (err) {
+    console.error("TMDB error:", err);
     resultsDiv.innerHTML = '<p style="color: #E74C3C;">Error al conectar con TMDB (Revisa el ID) 🐒</p>';
   }
 }
 
-window.selectTMDBMovie = (m) => {
+// Re-defining as global window.searchTMDB for consistency
+window.searchTMDB = window.searchTMDB;
+
+window.selectTMDBMovie = (index) => {
+  const m = _tmdbLastResults[index];
+  if (!m) return;
+
   const title = m.title || m.name;
   const date = m.release_date || m.first_air_date || "2024";
   const type = m.media_type === 'tv' ? 'series' : 'movie';
 
   document.getElementById('m-title').value = title;
-  document.getElementById('m-img').value = TMDB_IMG_URL + m.poster_path;
+  document.getElementById('m-img').value = m.poster_path ? (TMDB_IMG_URL + m.poster_path) : "";
   document.getElementById('m-tmdb-id').value = m.id;
   document.getElementById('m-type').value = type;
   document.getElementById('m-meta').value = `${date.split('-')[0]} / ${m.vote_average || '8.0'}`;
   document.getElementById('m-embed').value = "";
 
   const preview = document.getElementById('m-img-preview');
-  if (preview) preview.src = TMDB_IMG_URL + m.poster_path;
+  if (preview) {
+    preview.src = m.poster_path ? (TMDB_IMG_URL + m.poster_path) : 'https://via.placeholder.com/150x220?text=Previsualización';
+  }
 
   alert(`Cosechada info de: ${title} 🥥🍹`);
 };
