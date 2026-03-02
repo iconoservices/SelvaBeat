@@ -1184,7 +1184,8 @@ window.massSeedMovies = async (contentType) => {
       const pageNum = attempt + 1;
       status.innerText = `🔍 Buscando página ${pageNum}... (${pendingSeeds.length} nuevas encontradas)`;
 
-      let url = `${TMDB_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=${lang}&sort_by=popularity.desc&page=${pageNum}`;
+      const sortBy = document.getElementById('discover-sort')?.value || 'popularity.desc';
+      let url = `${TMDB_URL}/discover/${endpoint}?api_key=${TMDB_API_KEY}&language=${lang}&sort_by=${sortBy}&page=${pageNum}`;
       if (year && year !== '') url += `&${isTv ? 'first_air_date_year' : 'primary_release_year'}=${year}`;
       if (genre && genre !== '') url += `&with_genres=${genre}`;
       const origLang = document.getElementById('discover-orig-lang')?.value || '';
@@ -1442,10 +1443,39 @@ function initApp(filterType = '', genreId = '') {
   }
 }
 
+window.suggestTVChannels = () => {
+  const container = document.getElementById('discover-container');
+  const list = document.getElementById('discover-list');
+  const status = document.getElementById('discover-status');
+  if (!container || !list || !status) return;
+
+  container.style.display = 'block';
+  status.innerText = "📺 Canales de TV Sugeridos (Links M3U8 públicos):";
+
+  const suggestions = [
+    { name: "Telefe (AR)", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Telefe_logo.svg/1200px-Telefe_logo.svg.png", embed: "https://vcp.telefe.com/atv/telefe/telefe.m3u8" },
+    { name: "Azteca 7 (MX)", img: "https://upload.wikimedia.org/wikipedia/commons/5/52/TV_Azteca_7_logo.png", embed: "https://d1f8p81k2m2b4y.cloudfront.net/out/v1/98157774fd6e4a6fa83917452d37803d/index.m3u8" },
+    { name: "NASA TV", img: "https://www.nasa.gov/wp-content/themes/nasa/assets/images/nasa-logo.svg", embed: "https://ntvpublic.akamaized.net/hls/live/2023153/ntv-public/index.m3u8" }
+  ];
+
+  list.innerHTML = suggestions.map(s => `
+     <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--glass-border);">
+        <img src="${s.img}" style="width: 40px; height: 40px; object-fit: contain; background:#fff; border-radius: 4px;">
+        <div style="flex: 1;">
+          <p style="font-size: 0.75rem; font-weight: bold; margin-bottom: 2px;">${s.name}</p>
+          <button onclick="window.quickSeedManual(${JSON.stringify(s).replace(/"/g, '&quot;')}, 'live')" style="background: #2ECC71; border: none; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; cursor: pointer;">➕ Agregar Canal</button>
+        </div>
+      </div>
+  `).join('');
+};
+
 // Initial Setup
 document.addEventListener('DOMContentLoaded', () => {
   handleRouting();
   window.addEventListener('hashchange', handleRouting);
+
+  const btnDiscoverLive = document.getElementById('btn-discover-live');
+  if (btnDiscoverLive) btnDiscoverLive.onclick = window.suggestTVChannels;
 
   document.getElementById('global-search').addEventListener('input', (e) => handleGlobalSearch(e.target.value));
 
@@ -1549,12 +1579,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Discovery Handlers — use onclick via window.* so they work even if elements re-render
   const btnDiscoverMovies = document.getElementById('btn-discover-movies');
   const btnDiscoverSeries = document.getElementById('btn-discover-series');
-  const btnDiscoverLive = document.getElementById('btn-discover-live');
+  const btnDivLive = document.getElementById('btn-discover-live');
   const btnConfirmSeed = document.getElementById('btn-confirm-mass-seed');
 
   if (btnDiscoverMovies) btnDiscoverMovies.addEventListener('click', () => window.massSeedMovies('movie'));
   if (btnDiscoverSeries) btnDiscoverSeries.addEventListener('click', () => window.massSeedMovies('series'));
-  if (btnDiscoverLive) btnDiscoverLive.addEventListener('click', () => window.discoverLive());
+  if (btnDivLive) btnDivLive.addEventListener('click', () => window.suggestTVChannels());
   if (btnConfirmSeed) btnConfirmSeed.addEventListener('click', () => window.confirmBatchSeed());
 
   // Also expose discoverContent as window for onclick fallback

@@ -113,45 +113,60 @@
                 🔴 Señales de TV Sugeridas
               </button>
 
-              <!-- Discovery Filters -->
+              <!-- Discovery Filters (Nuevos Poderes) -->
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                <select id="mass-seed-amount" class="form-control" style="font-size: 0.7rem;">
-                  <option value="1">20 resultados</option>
-                  <option value="3">60 resultados</option>
-                  <option value="5">100 resultados</option>
-                  <option value="15">300 resultados</option>
+                <select id="discover-sort" class="form-control"
+                  style="font-size: 0.75rem; background: rgba(255,122,0,0.1); border-color: var(--primary); color: white;">
+                  <option value="popularity.desc">🔥 Lo más Popular (Trending)</option>
+                  <option value="vote_count.desc">🏆 Los más Taquilleros (Top)</option>
+                  <option value="revenue.desc">💰 Mayores Recaudaciones</option>
+                  <option value="primary_release_date.desc">✨ Recién Salidas</option>
                 </select>
+
                 <select id="discover-year" class="form-control" style="font-size: 0.75rem;">
-                  <option value="">Cualquier Año</option>
+                  <option value="">📅 Cualquier Año</option>
                   <!-- Opciones añadidas por JS -->
                 </select>
+
                 <select id="discover-genre" class="form-control" style="font-size: 0.75rem;">
-                  <option value="">🔥 Todos los géneros</option>
-                  <option value="28">Acción</option>
-                  <option value="16">Animación</option>
-                  <option value="35">Comedia</option>
-                  <option value="27">Terror</option>
-                  <option value="10749">Romance</option>
-                  <option value="878">Sci-Fi</option>
+                  <option value="">🎭 Todos los géneros</option>
+                  <option value="28">🔹 Acción</option>
+                  <option value="16">🔹 Animación / Anime</option>
+                  <option value="35">🔹 Comedia</option>
+                  <option value="27">🔹 Terror / Suspenso</option>
+                  <option value="10751">🔹 Familia / Infantil</option>
+                  <option value="18">🔹 Drama</option>
+                  <option value="878">🔹 Ciencia Ficción</option>
+                  <option value="9648">🔹 Misterio</option>
                 </select>
+
                 <select id="discover-lang" class="form-control" style="font-size: 0.75rem;">
-                  <option value="es-MX">Latino (es-MX)</option>
-                  <option value="es-PE">Perú (es-PE)</option>
-                  <option value="es-ES">España (es-ES)</option>
-                  <option value="en-US">Inglés (US)</option>
+                  <option value="es-MX" selected>🇲🇽 Español Latino</option>
+                  <option value="es-ES">🇪🇸 Español España</option>
+                  <option value="en-US">🇺🇸 Títulos en Inglés</option>
                 </select>
+
                 <!-- Filtro de Idioma Original -->
                 <select id="discover-orig-lang" class="form-control"
                   style="font-size: 0.75rem; grid-column: span 2; background: rgba(255,122,0,0.08); border-color: rgba(255,122,0,0.4);">
-                  <option value="">🌎 Cualquier idioma original</option>
-                  <option value="es" selected>🇲🇽 Solo en Español (producidas en ES)</option>
-                  <option value="en">🇺🇸 Solo en Inglés (Hollywood)</option>
-                  <option value="pt">🇧🇷 Solo en Portugués</option>
-                  <option value="ja">🇯&#x30FC;Japonés (Anime/JP)</option>
-                  <option value="ko">🇰🇷 Coreano (K-Drama)</option>
-                  <option value="fr">🇫🇷 Francés</option>
+                  <option value="">🌎 Cualquier Origen (Hollywood + Mundo)</option>
+                  <option value="en" selected>🇺🇸 Solo Hollywood (Original Inglés)</option>
+                  <option value="es">🇲🇽 Solo Producciones en Español</option>
+                  <option value="ja">🇯🇵 Solo Producciones Japonesas (Anime)</option>
+                  <option value="ko">🇰🇷 Solo Producciones Coreanas</option>
+                </select>
+
+                <select id="mass-seed-amount" class="form-control" style="font-size: 0.7rem; grid-column: span 2;">
+                  <option value="1">Cosechar 20 coconas</option>
+                  <option value="3">Cosechar 60 coconas</option>
+                  <option value="5">Cosechar 100 coconas</option>
                 </select>
               </div>
+
+              <p
+                style="font-size: 0.65rem; color: #aaa; margin-top: -5px; margin-bottom: 10px; line-height: 1.2; text-align:center;">
+                💡 <b>Tip TV:</b> Elige "Señales Sugeridas" o pega un link .m3u8 abajo (no se usa TMDB).
+              </p>
 
               <div id="discover-container"
                 style="display: none; background: rgba(0,0,0,0.4); border-radius: 12px; padding: 15px; border: 1px solid var(--glass-border);">
