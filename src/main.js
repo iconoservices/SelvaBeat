@@ -1803,132 +1803,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ─── PWA RADAR SYSTEM: PATRÓN ASIMÉTRICO ───────────────────
-  let deferredPrompt = null;
-  const pwaBanner = document.getElementById('pwa-radar-banner');
-  const navInstallBtn = document.getElementById('pwa-install-btn');
-  const bannerInstallBtn = document.getElementById('pwa-banner-install-btn');
-  const bannerCloseBtn = document.getElementById('pwa-banner-close-btn');
-
-  // 1. Inicializar Estadísticas
-  const PWA_STATS_KEY = 'selva_pwa_radar_v1';
-  let stats = JSON.parse(localStorage.getItem(PWA_STATS_KEY)) || {
-    visitCount: 0,
-    lastInteraction: 0,
-    installed: false
-  };
-
-  // Detectar si ya es PWA (Standalone)
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  if (isStandalone) {
-    stats.installed = true;
-    localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
-  }
-
-  // Incrementar Visitas
-  stats.visitCount++;
-  const now = Date.now();
-  const hoursSinceLast = (now - stats.lastInteraction) / (1000 * 60 * 60);
-  const shouldShowByInactivity = hoursSinceLast >= 48 && stats.lastInteraction !== 0;
-  stats.lastInteraction = now;
-  localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
-
-  const showBanner = () => {
-    if (stats.installed || isStandalone) return;
-    if (pwaBanner) pwaBanner.classList.add('active');
-  };
-
-  const hideBanner = () => {
-    if (pwaBanner) pwaBanner.classList.remove('active');
-  };
-
-  // Interceptar Prompt de Instalación
+  // PWA Install Prompt
+  const installBtn = document.getElementById('pwa-install-btn');
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-
-    // Botón de Navbar SIEMPRE visible si es elegible y no instalado
-    if (navInstallBtn && !isStandalone) navInstallBtn.style.display = 'flex';
+    if (installBtn) installBtn.style.display = 'flex';
   });
 
-  // 2. LÓGICA DE ACTIVACIÓN ASIMÉTRICA (Fuera del evento para funcionar en iOS y ser más rápido)
-  if (!stats.installed && !isStandalone) {
-    if (stats.visitCount === 1) {
-      // Visita 1: Descubrimiento (3s)
-      setTimeout(showBanner, 3000);
-    }
-    else if (stats.visitCount === 2) {
-      // Visita 2: Contextual (50% scroll)
-      const handleScroll = () => {
-        const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight;
-        if (scrollPercent > 0.5) {
-          showBanner();
-          window.removeEventListener('scroll', handleScroll);
-        }
-      };
-      window.addEventListener('scroll', handleScroll);
-    }
-    else if (stats.visitCount === 3) {
-      // Visita 3: Recordatorio Tardío (20s)
-      setTimeout(showBanner, 20000);
-    }
-    else {
-      // Visita 4+: El Loop de Persistencia (Cada 5 visitas o >48h)
-      if (stats.visitCount % 5 === 0 || shouldShowByInactivity) {
-        setTimeout(showBanner, 5000);
-      }
-    }
-  }
-
-  // Manejar Instalación
-  const executeInstall = async () => {
-    // Si ya tenemos el prompt nativo guardado (Android/PC)
-    if (deferredPrompt) {
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
-        stats.installed = true;
-        localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
-        hideBanner();
-        if (navInstallBtn) navInstallBtn.style.display = 'none';
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
       }
-      deferredPrompt = null;
-      return;
-    }
-
-    // Fallback solo para iOS o si el navegador aún no dispara el evento
-    if (isStandalone) return;
-
-    // Detectar iOS específicamente para dar instrucciones mejores
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
-      alert("Para instalar SelvaFlix en iPhone:\n\n1. Toca el botón 'Compartir' (↑) abajo.\n2. Desliza y elige 'Agregar a inicio'.\n3. ¡Listo! Ya tendrá el ícono en tu pantalla.");
-    } else {
-      // Para Android/Chrome que aún no dispara, pero el usuario clickeo el botón fijo
-      alert("Para instalar SelvaFlix:\n\nBusca la opción 'Instalar App' o 'Instalar sitio' en el menú (⋮) de tu navegador.");
-    }
-  };
-
-  // Inicialización del botón de Navbar
-  if (navInstallBtn) {
-    // Si ya estamos en la APP (standalone), no mostramos el botón nunca
-    if (isStandalone || stats.installed) {
-      navInstallBtn.style.display = 'none';
-    } else {
-      navInstallBtn.style.display = 'flex';
-    }
+    });
   }
-
-  if (navInstallBtn) navInstallBtn.addEventListener('click', executeInstall);
-  if (bannerInstallBtn) bannerInstallBtn.addEventListener('click', executeInstall);
-  if (bannerCloseBtn) bannerCloseBtn.addEventListener('click', hideBanner);
-
-  // Detectar éxito total
-  window.addEventListener('appinstalled', () => {
-    stats.installed = true;
-    localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
-    hideBanner();
-    if (navInstallBtn) navInstallBtn.style.display = 'none';
-    console.log('🌴 SelvaFlix: Instalada con éxito');
-  });
 });

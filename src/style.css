@@ -240,151 +240,18 @@ h3,
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ─── PWA Radar Banner (Glassmorphism) ─────────────────────── */
-.pwa-banner {
-  position: fixed;
-  bottom: -250px;
-  left: 0;
-  right: 0;
-  padding: 12px;
-  z-index: 200000;
-  /* Super high */
-  transition: bottom 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.pwa-banner.active {
-  bottom: 90px !important;
-  /* Higher above bottom nav */
-}
-
-/* Premium Install Button */
-.install-btn-premium {
-  background: linear-gradient(135deg, #FF7A00 0%, #FFB142 100%) !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 50px !important;
-  padding: 10px 24px !important;
-  font-weight: 800 !important;
-  font-size: 0.85rem !important;
-  display: flex !important;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 8px 25px rgba(255, 122, 0, 0.5) !important;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  animation: pulse-glow 2.5s infinite;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .install-btn-premium {
-    padding: 6px 14px !important;
-    font-size: 0.7rem !important;
-    gap: 6px;
-  }
-
-  .install-btn-premium img {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-.install-btn-premium:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 12px 30px rgba(255, 122, 0, 0.6);
-  filter: brightness(1.1);
-}
-
-@keyframes pulse-glow {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 5px var(--primary-glow);
-  }
-
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 0 20px var(--primary-glow);
-  }
-
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 5px var(--primary-glow);
-  }
-}
-
-@media (max-width: 480px) {
-  .pwa-banner-content {
-    padding: 12px;
-    gap: 10px;
-    border-radius: 15px;
-  }
-}
-
-@media (min-width: 769px) {
-  .pwa-banner {
-    max-width: 400px;
-    left: 20px;
-    right: auto;
-  }
-}
-
-.pwa-banner-content {
-  background: rgba(15, 15, 15, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  padding: 16px;
+/* Hero Banners Section */
+.hero-banners {
   display: flex;
-  align-items: center;
-  gap: 15px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  gap: 20px;
+  overflow-x: auto;
+  padding: 100px 5% 20px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
 }
 
-.pwa-icon-box {
-  width: 50px;
-  height: 50px;
-  background: var(--primary);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-}
-
-.pwa-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.pwa-text strong {
-  font-size: 0.9rem;
-  color: white;
-}
-
-.pwa-text span {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.pwa-close-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  padding: 5px;
-  cursor: pointer;
-}
-
-/* Standalone Mode UI Fixes */
-@media (display-mode: standalone) {
-
-  #pwa-install-btn,
-  .pwa-banner {
-    display: none !important;
-  }
+.hero-banners::-webkit-scrollbar {
+  display: none;
 }
 
 /* ─── Filter Bar ──────────────────────────────────────────── */

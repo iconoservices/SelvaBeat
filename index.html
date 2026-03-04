@@ -8,16 +8,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SelvaFlix | Tu Cine, Tu Naturaleza</title>
   <meta name="description" content="La mejor plataforma de streaming tropical. Películas, series y TV en vivo.">
-
-  <!-- Apple PWA Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SelvaFlix">
-  <link rel="apple-touch-icon"
-    href="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Pucallpa_escudo.png/192px-Pucallpa_escudo.png">
-
-  <!-- Theme Color for Browser -->
-  <meta name="theme-color" content="#050505">
 </head>
 
 <body>
@@ -28,9 +18,9 @@
       </div>
       <div class="nav-actions">
         <input type="text" placeholder="Buscar en la selva..." class="search-bar" id="global-search">
-        <button id="pwa-install-btn" class="install-btn-premium">
-          <img src="https://img.icons8.com/color/48/amazon-fire-tv.png" width="20" height="20" alt="App Icon">
-          Instalar App
+        <button id="pwa-install-btn" class="btn btn-secondary"
+          style="display: none; padding: 6px 12px; font-size: 0.8rem; border-color: var(--primary); color: var(--primary); gap: 5px; align-items: center;">
+          📲 Instalar App
         </button>
         <a href="#admin" class="admin-icon" title="Panel de Control">⚙️</a>
       </div>
@@ -630,30 +620,7 @@
     </div>
 
   </div>
-  <!-- PWA Radar Banner -->
-  <div id="pwa-radar-banner" class="pwa-banner">
-    <div class="pwa-banner-content">
-      <div class="pwa-icon-box">🌴</div>
-      <div class="pwa-text">
-        <strong>¡Lleva la Selva en tu bolsillo!</strong>
-        <span>Instala SelvaFlix para una mejor experiencia.</span>
-      </div>
-      <button id="pwa-banner-install-btn" class="btn btn-primary">Instalar</button>
-      <button id="pwa-banner-close-btn" class="pwa-close-btn">&times;</button>
-    </div>
-  </div>
-
   <script type="module" src="/src/main.js?v=2.5"></script>
-  <script>
-    // Registro de Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('🌴 Selva SW: Registrado', reg.scope))
-          .catch(err => console.log('❌ Selva SW: Error', err));
-      });
-    }
-  </script>
 </body>
 
 </html>
