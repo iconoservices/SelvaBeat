@@ -240,18 +240,86 @@ h3,
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Hero Banners Section */
-.hero-banners {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  padding: 100px 5% 20px;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
+/* ─── PWA Radar Banner (Glassmorphism) ─────────────────────── */
+.pwa-banner {
+  position: fixed;
+  bottom: -150px;
+  /* Hidden by default */
+  left: 0;
+  right: 0;
+  padding: 15px;
+  z-index: 10001;
+  transition: bottom 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.hero-banners::-webkit-scrollbar {
-  display: none;
+.pwa-banner.active {
+  bottom: 80px;
+  /* Above bottom nav */
+}
+
+@media (min-width: 769px) {
+  .pwa-banner {
+    max-width: 400px;
+    left: 20px;
+    right: auto;
+  }
+}
+
+.pwa-banner-content {
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.pwa-icon-box {
+  width: 50px;
+  height: 50px;
+  background: var(--primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.pwa-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.pwa-text strong {
+  font-size: 0.9rem;
+  color: white;
+}
+
+.pwa-text span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pwa-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  padding: 5px;
+  cursor: pointer;
+}
+
+/* Standalone Mode UI Fixes */
+@media (display-mode: standalone) {
+
+  #pwa-install-btn,
+  .pwa-banner {
+    display: none !important;
+  }
 }
 
 /* ─── Filter Bar ──────────────────────────────────────────── */

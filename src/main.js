@@ -1803,23 +1803,107 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // PWA Install Prompt
-  const installBtn = document.getElementById('pwa-install-btn');
+  // ─── PWA RADAR SYSTEM: PATRÓN ASIMÉTRICO ───────────────────
+  let deferredPrompt = null;
+  const pwaBanner = document.getElementById('pwa-radar-banner');
+  const navInstallBtn = document.getElementById('pwa-install-btn');
+  const bannerInstallBtn = document.getElementById('pwa-banner-install-btn');
+  const bannerCloseBtn = document.getElementById('pwa-banner-close-btn');
+
+  // 1. Inicializar Estadísticas
+  const PWA_STATS_KEY = 'selva_pwa_radar_v1';
+  let stats = JSON.parse(localStorage.getItem(PWA_STATS_KEY)) || {
+    visitCount: 0,
+    lastInteraction: 0,
+    installed: false
+  };
+
+  // Detectar si ya es PWA (Standalone)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (isStandalone) {
+    stats.installed = true;
+    localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
+  }
+
+  // Incrementar Visitas
+  stats.visitCount++;
+  const now = Date.now();
+  const hoursSinceLast = (now - stats.lastInteraction) / (1000 * 60 * 60);
+  const shouldShowByInactivity = hoursSinceLast >= 48 && stats.lastInteraction !== 0;
+  stats.lastInteraction = now;
+  localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
+
+  const showBanner = () => {
+    if (stats.installed || isStandalone) return;
+    if (pwaBanner) pwaBanner.classList.add('active');
+  };
+
+  const hideBanner = () => {
+    if (pwaBanner) pwaBanner.classList.remove('active');
+  };
+
+  // Interceptar Prompt de Instalación
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    if (installBtn) installBtn.style.display = 'flex';
+
+    // Botón de Navbar SIEMPRE visible si es elegible y no instalado
+    if (navInstallBtn && !isStandalone) navInstallBtn.style.display = 'flex';
+
+    // 2. LÓGICA DE ACTIVACIÓN ASIMÉTRICA
+    if (stats.installed) return;
+
+    if (stats.visitCount === 1) {
+      // Visita 1: Descubrimiento (3s)
+      setTimeout(showBanner, 3000);
+    }
+    else if (stats.visitCount === 2) {
+      // Visita 2: Contextual (50% scroll)
+      const handleScroll = () => {
+        const scrollPercent = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight;
+        if (scrollPercent > 0.5) {
+          showBanner();
+          window.removeEventListener('scroll', handleScroll);
+        }
+      };
+      window.addEventListener('scroll', handleScroll);
+    }
+    else if (stats.visitCount === 3) {
+      // Visita 3: Recordatorio Tardío (20s)
+      setTimeout(showBanner, 20000);
+    }
+    else {
+      // Visita 4+: El Loop de Persistencia (Cada 5 visitas o >48h)
+      if (stats.visitCount % 5 === 0 || shouldShowByInactivity) {
+        setTimeout(showBanner, 5000);
+      }
+    }
   });
 
-  if (installBtn) {
-    installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        deferredPrompt = null;
-        installBtn.style.display = 'none';
-      }
-    });
-  }
+  // Manejar Instalación
+  const executeInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      stats.installed = true;
+      localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
+      hideBanner();
+      if (navInstallBtn) navInstallBtn.style.display = 'none';
+    }
+    deferredPrompt = null;
+  };
+
+  if (navInstallBtn) navInstallBtn.addEventListener('click', executeInstall);
+  if (bannerInstallBtn) bannerInstallBtn.addEventListener('click', executeInstall);
+  if (bannerCloseBtn) bannerCloseBtn.addEventListener('click', hideBanner);
+
+  // Detectar éxito total
+  window.addEventListener('appinstalled', () => {
+    stats.installed = true;
+    localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
+    hideBanner();
+    if (navInstallBtn) navInstallBtn.style.display = 'none';
+    console.log('🌴 SelvaFlix: Instalada con éxito');
+  });
 });

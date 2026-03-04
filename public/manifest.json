@@ -1,21 +1,37 @@
 {
-    "name": "SelvaFlix: Cine y Selva",
+    "name": "SelvaFlix | Tu Cine, Tu Naturaleza",
     "short_name": "SelvaFlix",
-    "description": "Tu cine favorito en medio de la naturaleza.",
-    "start_url": "/",
+    "description": "Tu plataforma de streaming tropical. El cine que amas, donde quieras.",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#050505",
     "theme_color": "#FF7A00",
+    "orientation": "portrait-primary",
+    "scope": "./",
     "icons": [
         {
-            "src": "https://image.tmdb.org/t/p/w185/u6998yCAbANKVULmjBatNh0Giih.jpg",
+            "src": "https://img.icons8.com/fluency/512/amazon-fire-tv--v1.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
-            "src": "https://image.tmdb.org/t/p/w185/u6998yCAbANKVULmjBatNh0Giih.jpg",
+            "src": "https://img.icons8.com/fluency/512/amazon-fire-tv--v1.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "entertainment",
+        "video"
+    ],
+    "screenshots": [
+        {
+            "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "label": "Home Screen"
         }
     ]
 }

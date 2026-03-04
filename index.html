@@ -8,6 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SelvaFlix | Tu Cine, Tu Naturaleza</title>
   <meta name="description" content="La mejor plataforma de streaming tropical. Películas, series y TV en vivo.">
+
+  <!-- Apple PWA Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SelvaFlix">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/amazon-fire-tv--v1.png">
+
+  <!-- Theme Color for Browser -->
+  <meta name="theme-color" content="#050505">
 </head>
 
 <body>
@@ -620,7 +629,30 @@
     </div>
 
   </div>
+  <!-- PWA Radar Banner -->
+  <div id="pwa-radar-banner" class="pwa-banner">
+    <div class="pwa-banner-content">
+      <div class="pwa-icon-box">🌴</div>
+      <div class="pwa-text">
+        <strong>¡Lleva la Selva en tu bolsillo!</strong>
+        <span>Instala SelvaFlix para una mejor experiencia.</span>
+      </div>
+      <button id="pwa-banner-install-btn" class="btn btn-primary">Instalar</button>
+      <button id="pwa-banner-close-btn" class="pwa-close-btn">&times;</button>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.js?v=2.5"></script>
+  <script>
+    // Registro de Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('🌴 Selva SW: Registrado', reg.scope))
+          .catch(err => console.log('❌ Selva SW: Error', err));
+      });
+    }
+  </script>
 </body>
 
 </html>
