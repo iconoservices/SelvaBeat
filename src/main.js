@@ -1849,10 +1849,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón de Navbar SIEMPRE visible si es elegible y no instalado
     if (navInstallBtn && !isStandalone) navInstallBtn.style.display = 'flex';
+  });
 
-    // 2. LÓGICA DE ACTIVACIÓN ASIMÉTRICA
-    if (stats.installed) return;
-
+  // 2. LÓGICA DE ACTIVACIÓN ASIMÉTRICA (Fuera del evento para funcionar en iOS y ser más rápido)
+  if (!stats.installed && !isStandalone) {
     if (stats.visitCount === 1) {
       // Visita 1: Descubrimiento (3s)
       setTimeout(showBanner, 3000);
@@ -1878,30 +1878,45 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(showBanner, 5000);
       }
     }
-  });
+  }
 
   // Manejar Instalación
   const executeInstall = async () => {
-    if (!deferredPrompt) {
-      // Fallback para iOS o navegadores que no disparan el evento rápido
-      if (isStandalone) return;
-      alert("Para instalar SelvaFlix:\n\n📱 Android: Busca 'Instalar App' en el menú (⋮) de tu navegador.\n\n🍎 iPhone: Toca el botón 'Compartir' (↑) y elige 'Agregar a inicio'.");
+    // Si ya tenemos el prompt nativo guardado (Android/PC)
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        stats.installed = true;
+        localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
+        hideBanner();
+        if (navInstallBtn) navInstallBtn.style.display = 'none';
+      }
+      deferredPrompt = null;
       return;
     }
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      stats.installed = true;
-      localStorage.setItem(PWA_STATS_KEY, JSON.stringify(stats));
-      hideBanner();
-      if (navInstallBtn) navInstallBtn.style.display = 'none';
+
+    // Fallback solo para iOS o si el navegador aún no dispara el evento
+    if (isStandalone) return;
+
+    // Detectar iOS específicamente para dar instrucciones mejores
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      alert("Para instalar SelvaFlix en iPhone:\n\n1. Toca el botón 'Compartir' (↑) abajo.\n2. Desliza y elige 'Agregar a inicio'.\n3. ¡Listo! Ya tendrá el ícono en tu pantalla.");
+    } else {
+      // Para Android/Chrome que aún no dispara, pero el usuario clickeo el botón fijo
+      alert("Para instalar SelvaFlix:\n\nBusca la opción 'Instalar App' o 'Instalar sitio' en el menú (⋮) de tu navegador.");
     }
-    deferredPrompt = null;
   };
 
   // Inicialización del botón de Navbar
   if (navInstallBtn) {
-    navInstallBtn.style.display = isStandalone ? 'none' : 'flex';
+    // Si ya estamos en la APP (standalone), no mostramos el botón nunca
+    if (isStandalone || stats.installed) {
+      navInstallBtn.style.display = 'none';
+    } else {
+      navInstallBtn.style.display = 'flex';
+    }
   }
 
   if (navInstallBtn) navInstallBtn.addEventListener('click', executeInstall);

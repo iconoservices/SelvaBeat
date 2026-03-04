@@ -243,19 +243,83 @@ h3,
 /* ─── PWA Radar Banner (Glassmorphism) ─────────────────────── */
 .pwa-banner {
   position: fixed;
-  bottom: -200px;
-  /* Offset more to hide completely */
+  bottom: -250px;
   left: 0;
   right: 0;
-  padding: 15px;
-  z-index: 99999;
-  /* Max priority */
+  padding: 12px;
+  z-index: 200000;
+  /* Super high */
   transition: bottom 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .pwa-banner.active {
-  bottom: 85px !important;
-  /* Above bottom nav */
+  bottom: 90px !important;
+  /* Higher above bottom nav */
+}
+
+/* Premium Install Button */
+.install-btn-premium {
+  background: linear-gradient(135deg, #FF7A00 0%, #FFB142 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 50px !important;
+  padding: 10px 24px !important;
+  font-weight: 800 !important;
+  font-size: 0.85rem !important;
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 25px rgba(255, 122, 0, 0.5) !important;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: pulse-glow 2.5s infinite;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .install-btn-premium {
+    padding: 6px 14px !important;
+    font-size: 0.7rem !important;
+    gap: 6px;
+  }
+
+  .install-btn-premium img {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.install-btn-premium:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(255, 122, 0, 0.6);
+  filter: brightness(1.1);
+}
+
+@keyframes pulse-glow {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px var(--primary-glow);
+  }
+
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 5px var(--primary-glow);
+  }
+}
+
+@media (max-width: 480px) {
+  .pwa-banner-content {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 15px;
+  }
 }
 
 @media (min-width: 769px) {
