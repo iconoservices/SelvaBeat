@@ -1,11 +1,11 @@
 {
-    "name": "SelvaBeat: Sonido Amazónico",
-    "short_name": "SelvaBeat",
-    "description": "Tu música favorita en el corazón de la selva.",
+    "name": "SelvaFlix: Cine y Selva",
+    "short_name": "SelvaFlix",
+    "description": "Tu cine favorito en medio de la naturaleza.",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#000000",
-    "theme_color": "#10b981",
+    "background_color": "#050505",
+    "theme_color": "#FF7A00",
     "icons": [
         {
             "src": "/icon_192.png",
