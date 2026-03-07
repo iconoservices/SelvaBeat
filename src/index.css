@@ -1,36 +1,59 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #ff7a00;
-  --color-surface: #121212;
+  --color-primary: #10b981;
+  /* Emerald 500 */
+  --color-surface: #0a0a0a;
+  /* Ultra Dark */
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
 }
 
 @layer base {
   body {
-    @apply bg-black text-white antialiased overflow-x-hidden;
+    @apply bg-[#050505] text-white antialiased overflow-x-hidden;
+    background-image: radial-gradient(circle at top left, rgba(16, 185, 129, 0.05), transparent 40%),
+      radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.02), transparent 40%);
     -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Scrollbar Minimalista */
+/* 🧪 Eyectores de Diseño Premium */
+@layer components {
+  .glass-card {
+    @apply bg-white/5 border border-white/10 backdrop-blur-2xl;
+  }
+
+  .glass-panel {
+    @apply bg-black/40 border-t border-white/5 backdrop-blur-3xl;
+  }
+
+  .premium-shadow {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8),
+      0 0 20px rgba(16, 185, 129, 0.1);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-tr from-white to-white/60;
+  }
+}
+
+/* 🌊 Scrollbar Invisible Estilo App Nativa */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 0px;
+  height: 0px;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 122, 0, 0.2);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 122, 0, 0.5);
-}
-
-/* Utilidades de Selección */
-.tap-highlight-transparent {
+/* 📱 Desactivar selección visual en móviles */
+* {
   -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

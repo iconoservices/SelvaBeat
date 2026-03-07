@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePlayerStore } from '@/store/usePlayerStore'
 import { offlineDB } from '@/utils/db'
-import { Library as LibraryIcon, Search, TrendingUp, Radio } from 'lucide-react'
+import { Library as LibraryIcon, Search, TrendingUp, Home as HomeIcon, Zap } from 'lucide-react'
 
 // Componentes
 import ToastContainer from '@/components/ToastContainer'
@@ -14,7 +14,7 @@ import Library from '@/pages/Library'
 import SearchPage from '@/pages/SearchPage'
 
 /**
- * 🌴 SelvaBeat App v4.2.0 - "Arquitectura Soberana"
+ * 🌴 SelvaBeat App v5.0.0 - "Sinfonía Midnight"
  */
 function App() {
     const systemStatus = usePlayerStore(state => state.systemStatus);
@@ -24,7 +24,6 @@ function App() {
     // 🕵️‍♂️ Bootstrap: Escaneo de Sistemas
     useEffect(() => {
         const bootstrap = async () => {
-            console.log("🔍 SelvaBeat: Escaneando Búnker...");
             const dbOk = await offlineDB.verifyStatus();
             try {
                 const res = await fetch('https://icono-proxy.jnmcsky.workers.dev/?key=selva_master_key_2026_premium');
@@ -38,38 +37,16 @@ function App() {
             }
         };
         bootstrap();
-    }, []);
+    }, [setSystemStatus]);
 
     return (
-        <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-emerald-500/30 overflow-x-hidden">
             <ToastContainer />
             <UpdatePWA />
             <InstallModal />
 
-            {/* Header / Brand */}
-            <header className="fixed top-0 left-0 right-0 z-40 bg-black/60 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
-                            <Radio className="text-black" size={18} />
-                        </div>
-                        <h1 className="text-xl font-black tracking-tighter uppercase italic">
-                            Selva<span className="text-emerald-500">Beat</span>
-                        </h1>
-                    </div>
-
-                    <div className={`text-[10px] font-bold px-3 py-1 rounded-full border transition-all duration-500 ${systemStatus === 'ok' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
-                        systemStatus === 'degraded' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
-                            'bg-red-500/10 border-red-500/20 text-red-500'
-                        }`}>
-                        {systemStatus === 'ok' ? 'Radar: Conectado' :
-                            systemStatus === 'degraded' ? 'Radar: Saturado' : 'Radar: Offline'}
-                    </div>
-                </div>
-            </header>
-
             {/* Main Content Area */}
-            <main className="pt-20 pb-32 max-w-5xl mx-auto px-6">
+            <main className="pb-32">
                 {currentView === 'home' && <Home />}
                 {currentView === 'library' && <Library />}
                 {currentView === 'search' && <SearchPage />}
@@ -79,49 +56,55 @@ function App() {
             <FloatingPlayer />
             <MiniPlayer />
 
-            {/* Navegación Inferior Estilo Premium */}
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black via-black/95 to-transparent pb-8 pt-4">
-                <div className="max-w-md mx-auto px-6 flex justify-around items-center">
+            {/* Navegación Inferior Estilo Premium v5.0 */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black via-black/90 to-transparent pb-6 pt-10 px-6">
+                <div className="max-w-lg mx-auto bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-2 flex justify-between items-center premium-shadow">
                     <NavButton
                         active={currentView === 'home'}
                         onClick={() => setCurrentView('home')}
-                        icon={<TrendingUp size={24} />}
-                        label="Explorar"
+                        icon={<HomeIcon size={22} />}
+                        label="Inicio"
                     />
                     <NavButton
                         active={currentView === 'search'}
                         onClick={() => setCurrentView('search')}
-                        icon={<Search size={24} />}
+                        icon={<Search size={22} />}
                         label="Buscar"
                     />
                     <NavButton
                         active={currentView === 'library'}
                         onClick={() => setCurrentView('library')}
-                        icon={<LibraryIcon size={24} />}
-                        label="Bóveda"
+                        icon={<LibraryIcon size={22} />}
+                        label="Biblioteca"
+                    />
+                    <NavButton
+                        active={currentView === 'premium'}
+                        onClick={() => setCurrentView('home')}
+                        icon={<Zap size={22} />}
+                        label="Premium"
                     />
                 </div>
             </nav>
+
+            {/* Decoración de Fondo (Selva Aura) */}
+            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/5 blur-[120px] rounded-full pointer-events-none z-0" />
+            <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-900/10 blur-[120px] rounded-full pointer-events-none z-0" />
         </div>
-    )
+    );
 }
 
-function NavButton({ active, onClick, icon, label }) {
-    return (
-        <button
-            onClick={onClick}
-            className={`flex flex-col items-center gap-1 transition-all relative ${active ? 'text-emerald-500 scale-110' : 'text-white/40 hover:text-white/60'
-                }`}
-        >
-            {active && (
-                <div className="absolute -top-1 w-1 h-1 bg-emerald-500 rounded-full blur-[2px] animate-pulse" />
-            )}
-            {icon}
-            <span className={`text-[9px] font-black uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-60'}`}>
-                {label}
-            </span>
-        </button>
-    )
-}
+const NavButton = ({ active, onClick, icon, label }) => (
+    <button
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-[2rem] transition-all duration-300 ${active ? 'text-emerald-500 bg-emerald-500/10' : 'text-white/40 hover:text-white/60'}`}
+    >
+        <div className={`mb-1 transition-transform duration-300 ${active ? 'scale-110' : 'scale-100'}`}>
+            {React.cloneElement(icon, { strokeWidth: active ? 2.5 : 2 })}
+        </div>
+        <span className={`text-[9px] font-black uppercase tracking-widest transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-40'}`}>
+            {label}
+        </span>
+    </button>
+);
 
-export default App
+export default App;

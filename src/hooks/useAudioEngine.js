@@ -41,24 +41,36 @@ export const useAudioEngine = () => {
         setLoading(true);
 
         const bootstrapTrack = async () => {
-            // 1. Prioridad: Almacén Local (Sin internet)
-            const item = await offlineDB.get(videoData.id);
-            if (item?.blob) {
-                const url = URL.createObjectURL(item.blob);
-                cleanRAM();
-                setOfflineState(true, url);
-                console.log("🔋 Motor: Cargado desde Bóveda Offline.");
-                setLoading(false);
-                return;
-            }
+            const trackId = videoData.id;
+            console.time(`[Radar] Carga: ${trackId}`);
 
-            // 2. Internet: Solicitar flujo al Worker
+            // 1. Prioridad: Almacén Local (Sin internet) - Búsqueda en paralelo
+            const localCheck = offlineDB.get(trackId);
+
+            // 2. Internet: Solicitar flujo al Worker (Lanzamos la petición ya mismo)
+            const cloudCheck = getVideoStreams(trackId);
+
             try {
-                const newStreams = await getVideoStreams(videoData.id);
+                const item = await localCheck;
+                if (item?.blob) {
+                    console.log("🔋 Motor: ¡Hit en Bóveda Local!");
+                    const url = URL.createObjectURL(item.blob);
+                    cleanRAM();
+                    setOfflineState(true, url);
+                    setLoading(false);
+                    console.timeEnd(`[Radar] Carga: ${trackId}`);
+                    return;
+                }
+
+                // Si no está local, esperamos al worker (que ya lanzamos arriba)
+                const newStreams = await cloudCheck;
+                console.log("📡 Motor: Stream recibido del Worker.");
                 loadVideo(videoData, newStreams);
             } catch (e) {
-                console.warn("🚨 InocoOS falló. Entrando en Modo Vigilancia...");
-                // No forzamos el error aún, dejamos que el Watchdog decida
+                console.warn("🚨 Fallo en secuencia de carga:", e.message);
+            } finally {
+                setLoading(false);
+                console.timeEnd(`[Radar] Carga: ${trackId}`);
             }
         };
 

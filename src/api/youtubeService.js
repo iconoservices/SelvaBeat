@@ -5,7 +5,7 @@
  */
 
 const INOCOOS_BASE_URL = 'https://icono-proxy.jnmcsky.workers.dev';
-const INOCOOS_AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || localStorage.getItem('iconoservices_token') || 'MASTER_TOKEN_REQUIRED';
+const INOCOOS_AUTH_TOKEN = 'selva_master_key_2026_premium';
 
 const getHeaders = () => ({
     'Accept': 'application/json',
@@ -64,7 +64,7 @@ export const searchVideos = async (query) => {
 /**
  * Obtiene las tendencias a través del Worker Maestro (Titanium Scraper v1.4)
  */
-export const getTrending = async (region = 'MX') => {
+export const getTrending = async (region = 'PE') => {
     try {
         const url = `${INOCOOS_BASE_URL}/beat/trending?region=${region}&key=${INOCOOS_AUTH_TOKEN}`;
         const res = await fetch(url, { headers: getHeaders() });
