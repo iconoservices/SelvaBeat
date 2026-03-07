@@ -5,7 +5,7 @@
  */
 
 const INOCOOS_BASE_URL = 'https://icono-proxy.jnmcsky.workers.dev';
-const INOCOOS_AUTH_TOKEN = 'selva_master_key_2026_premium';
+const INOCOOS_AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || 'selva_master_key_2026_premium';
 
 const getHeaders = () => ({
     'Accept': 'application/json',

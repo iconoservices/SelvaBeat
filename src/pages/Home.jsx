@@ -19,29 +19,49 @@ const Home = () => {
         { id: 1, title: 'Mix Verano 2024', color: 'from-orange-500', icon: '❤️' },
         { id: 2, title: 'Relájate Indie', color: 'from-blue-500', icon: '✨' },
         { id: 3, title: 'Favoritos de Siempre', color: 'from-yellow-500', icon: '💛' },
+        { id: 4, title: 'Éxitos Globales', color: 'from-purple-500', icon: '🚀' },
+        { id: 5, title: 'Concentración', color: 'from-emerald-500', icon: '🧠' },
+        { id: 6, title: 'Gimnasio', color: 'from-red-500', icon: '💪' },
+        { id: 7, title: 'Dormir', color: 'from-indigo-600', icon: '🌙' },
     ];
 
     const topArtists = [
         { id: 'badbunny', name: 'Bad Bunny', img: 'https://i.scdn.co/image/ab6761610000e5eb989ed05e810ca24857467111' },
         { id: 'taylor', name: 'Taylor Swift', img: 'https://i.scdn.co/image/ab6761610000e5eb8594241e389e87498305c6e8' },
         { id: 'theweeknd', name: 'The Weeknd', img: 'https://i.scdn.co/image/ab6761610000e5eb214f3cf1c5d013f93d26cc80' },
+        { id: 'karolg', name: 'Karol G', img: 'https://i.scdn.co/image/ab6761610000e5eb90d29631215b00c2a2da8929' },
         { id: 'rosalia', name: 'Rosalia', img: 'https://i.scdn.co/image/ab6761610000e5eb1e792576ca5758c0788647ba' },
+        { id: 'jbalvin', name: 'J Balvin', img: 'https://i.scdn.co/image/ab6761610000e5eb18606c483cc1e48fd1d88698' },
+        { id: 'feid', name: 'Feid', img: 'https://i.scdn.co/image/ab6761610000e5eb3544d93026362d29497d3121' },
+        { id: 'shakira', name: 'Shakira', img: 'https://i.scdn.co/image/ab6761610000e5eb8ac876db2e957367cb6eb884' },
+        { id: 'quevedo', name: 'Quevedo', img: 'https://i.scdn.co/image/ab6761610000e5eb604439ef04d5386b627192ea' },
+        { id: 'myketowers', name: 'Myke Towers', img: 'https://i.scdn.co/image/ab6761610000e5eb8090f48866e409b552e6949b' },
     ];
 
     useEffect(() => {
-        const fetchTrending = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                const data = await getTrending();
-                setTracks(data);
+                // 1. Cargar Tendencias Perú
+                const trending = await getTrending();
+
+                // 2. Cargar Descubrimiento (Para rellenar)
+                const { searchVideos } = await import('@/api/youtubeService');
+                const discovery = await searchVideos('exitos 2024');
+
+                // Mezclar (Priorizando tendencias)
+                const uniqueIds = new Set(trending.map(t => t.videoId));
+                const combined = [...trending, ...discovery.filter(d => !uniqueIds.has(d.videoId))];
+
+                setTracks(combined);
             } catch (error) {
-                console.error("Home: Fallo en cosecha:", error);
+                console.error("Home: Fallo en carga:", error);
                 addToast("Error al conectar con la selva.", "error");
             } finally {
                 setLoading(false);
             }
         };
-        fetchTrending();
+        fetchData();
     }, [addToast]);
 
     const handlePlay = (track) => {
