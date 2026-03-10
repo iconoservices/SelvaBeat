@@ -46,8 +46,12 @@ const Home = () => {
                 const { searchVideos } = await import('@/api/youtubeService');
                 const discovery = await searchVideos('exitos musicales 2024 oficial');
 
-                // 🛸 El "Filtro Soberano" (Purga Mixes y basura)
+                // 🛸 El "Filtro Soberano" (Aniquilación de Mixes Mixta)
                 const isGarbage = (t) => {
+                    // 1. Filtrar por Duración (Si dura más de 8 minutos, es un mix sí o sí)
+                    if (t.duration > 480) return true;
+
+                    // 2. Filtrar por Texto de Título
                     const blackList = [
                         'mix', 'completo', 'full album', '1 hour', 'envivo', 'reggaeton mix',
                         'variado', 'sesión', 'dj set', 'megamix', 'lo mejor de', 'recopilatorio',
