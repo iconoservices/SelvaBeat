@@ -16,13 +16,13 @@ const Home = () => {
 
     // Datos estáticos para los carruseles (Simulando el modelo)
     const featuredPlaylists = [
-        { id: 1, title: 'Mix Verano 2024', color: 'from-orange-500', icon: '❤️' },
-        { id: 2, title: 'Relájate Indie', color: 'from-blue-500', icon: '✨' },
-        { id: 3, title: 'Favoritos de Siempre', color: 'from-yellow-500', icon: '💛' },
-        { id: 4, title: 'Éxitos Globales', color: 'from-purple-500', icon: '🚀' },
-        { id: 5, title: 'Concentración', color: 'from-emerald-500', icon: '🧠' },
-        { id: 6, title: 'Gimnasio', color: 'from-red-500', icon: '💪' },
-        { id: 7, title: 'Dormir', color: 'from-indigo-600', icon: '🌙' },
+        { id: 1, title: 'Top Global 2024', color: 'from-orange-500', icon: '🌍' },
+        { id: 2, title: 'Indie Soberano', color: 'from-blue-500', icon: '✨' },
+        { id: 3, title: 'Favoritos Selva', color: 'from-yellow-500', icon: '💛' },
+        { id: 4, title: 'Éxitos Urbanos', color: 'from-purple-500', icon: '🚀' },
+        { id: 5, title: 'Concentración Pro', color: 'from-emerald-500', icon: '🧠' },
+        { id: 6, title: 'Gimnasio Bestia', color: 'from-red-500', icon: '💪' },
+        { id: 7, title: 'Dormir Profundo', color: 'from-indigo-600', icon: '🌙' },
     ];
 
     const topArtists = [
@@ -42,18 +42,32 @@ const Home = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // 1. Cargar Tendencias Perú
                 const trending = await getTrending();
-
-                // 2. Cargar Descubrimiento (Para rellenar)
                 const { searchVideos } = await import('@/api/youtubeService');
-                const discovery = await searchVideos('exitos 2024');
+                const discovery = await searchVideos('top songs 2024 -mix -remix -mashup');
 
-                // Mezclar (Priorizando tendencias)
-                const uniqueIds = new Set(trending.map(t => t.videoId));
-                const combined = [...trending, ...discovery.filter(d => !uniqueIds.has(d.videoId))];
+                // 🛸 El "Filtro Soberano" (Purga Mixes y basura)
+                const isGarbage = (t) => {
+                    const blackList = [
+                        'mix', 'completo', 'full album', '1 hour', 'envivo', 'reggaeton mix',
+                        'variado', 'sesión', 'dj set', 'megamix', 'lo mejor de', 'recopilatorio',
+                        'playlist mix', 'estreno 2025', 'éxitos 2025'
+                    ];
+                    return blackList.some(word => t.title.toLowerCase().includes(word));
+                };
 
-                setTracks(combined);
+                const all = [...trending, ...discovery].filter(t => !isGarbage(t));
+
+                // Unificador de IDs para evitar clones
+                const seen = new Set();
+                const clean = all.filter(t => {
+                    const tid = t.id || t.videoId;
+                    if (seen.has(tid)) return false;
+                    seen.add(tid);
+                    return true;
+                });
+
+                setTracks(clean.slice(0, 24));
             } catch (error) {
                 console.error("Home: Fallo en carga:", error);
                 addToast("Error al conectar con la selva.", "error");
