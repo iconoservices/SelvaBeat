@@ -44,14 +44,15 @@ const Home = () => {
                 setLoading(true);
                 const trending = await getTrending();
                 const { searchVideos } = await import('@/api/youtubeService');
-                const discovery = await searchVideos('top songs 2024 -mix -remix -mashup');
+                const discovery = await searchVideos('exitos musicales 2024 oficial');
 
                 // 🛸 El "Filtro Soberano" (Purga Mixes y basura)
                 const isGarbage = (t) => {
                     const blackList = [
                         'mix', 'completo', 'full album', '1 hour', 'envivo', 'reggaeton mix',
                         'variado', 'sesión', 'dj set', 'megamix', 'lo mejor de', 'recopilatorio',
-                        'playlist mix', 'estreno 2025', 'éxitos 2025'
+                        'playlist', 'estreno 2025', 'éxitos 2025', 'top hits', 'top songs',
+                        'medley', 'best songs', 'top 30'
                     ];
                     return blackList.some(word => t.title.toLowerCase().includes(word));
                 };
