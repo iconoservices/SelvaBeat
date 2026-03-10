@@ -8,7 +8,6 @@ import ToastContainer from '@/components/ToastContainer'
 import FloatingPlayer from '@/components/Player/FloatingPlayer'
 import MiniPlayer from '@/components/Player/MiniPlayer'
 import InstallModal from '@/components/InstallModal'
-import UpdatePWA from '@/components/UpdatePWA'
 import Home from '@/pages/Home'
 import Library from '@/pages/Library'
 import SearchPage from '@/pages/SearchPage'
@@ -42,7 +41,6 @@ function App() {
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-emerald-500/30 overflow-x-hidden">
             <ToastContainer />
-            <UpdatePWA />
             <InstallModal />
 
             {/* Main Content Area */}
