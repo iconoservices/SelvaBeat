@@ -42,41 +42,21 @@ const Home = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // 1. Usar el Catálogo Pro directamente para el Home (Modo Spotify)
                 const { searchCleanCatalog } = await import('@/api/youtubeService');
-                const [hitsUrbanos, topLatino, artistasFlow] = await Promise.all([
-                    searchCleanCatalog('top hits latino 2024'),
-                    searchCleanCatalog('reggaeton 2024'),
-                    searchCleanCatalog('feid quevedo karol g')
+
+                // 📡 Triple Escaneo de Catálogo Oficial (Apple Music Core)
+                const [estreno, latino, fiesta] = await Promise.all([
+                    searchCleanCatalog('nuevos lanzamientos 2024 oficial'),
+                    searchCleanCatalog('top latino 2024 billboard'),
+                    searchCleanCatalog('perreo 2024 reggaeton oficial')
                 ]);
 
-                // 🛸 El "Filtro Soberano" (Aniquilación de Mixes Mixta)
-                const isGarbage = (t) => {
-                    if (t.duration > 480) return true;
-                    const blackList = [
-                        'mix', 'completo', 'full album', '1 hour', 'envivo', 'reggaeton mix',
-                        'variado', 'sesión', 'dj set', 'megamix', 'lo mejor de', 'recopilatorio',
-                        'playlist', 'estreno 2025', 'éxitos 2025', 'top hits', 'top songs',
-                        'medley', 'best songs', 'top 30'
-                    ];
-                    return blackList.some(word => t.title.toLowerCase().includes(word));
-                };
+                // Filtro de Seguridad (Anti-Mixes)
+                const isGarbage = (t) => t.duration > 480 || t.title.toLowerCase().includes('mix');
 
-                const all = [...hitsUrbanos, ...topLatino, ...artistasFlow].filter(t => !isGarbage(t));
-
-                // Unificador de IDs para evitar clones
-                const seen = new Set();
-                const clean = all.filter(t => {
-                    const tid = t.id || t.videoId;
-                    if (seen.has(tid)) return false;
-                    seen.add(tid);
-                    return true;
-                });
-
-                setTracks(clean.slice(0, 24));
-            } catch (error) {
-                console.error("Home: Fallo en carga:", error);
-                addToast("Error al conectar con la selva.", "error");
+                setTracks([...estreno, ...latino, ...fiesta].filter(t => !isGarbage(t)).slice(0, 32));
+            } catch (e) {
+                addToast("Error al sintonizar radar oficial.", "error");
             } finally {
                 setLoading(false);
             }
@@ -85,29 +65,31 @@ const Home = () => {
     }, [addToast]);
 
     const handlePlay = async (track) => {
-        if (track.isHybrid) {
-            addToast("Sintonizando Radar Híbrido...", "info");
-            try {
-                const { searchVideos } = await import('@/api/youtubeService');
-                const res = await searchVideos(track.hybridQuery);
-                if (res && res.length > 0) {
-                    // Preservar la metadata ultra-limpia (Cover HD original y Título de Apple)
-                    const realTrack = {
-                        ...res[0],
-                        title: track.title,
-                        uploader: track.uploader,
-                        thumbnail: track.thumbnail
-                    };
-                    loadVideo(realTrack, null);
-                } else {
-                    addToast("No se pudo extraer el audio matriz.", "error");
-                }
-            } catch (e) {
-                addToast("Error al conectar el puente de audio.", "error");
+        addToast("Sintonizando Radar Híbrido...", "info");
+        try {
+            const { searchVideos, getVideoStreams } = await import('@/api/youtubeService');
+
+            // 1. Resolvemos el ID de YouTube por debajo de la mesa
+            const searchRes = await searchVideos(track.hybridQuery || `${track.title} ${track.uploader} official audio`);
+            if (searchRes && searchRes.length > 0) {
+                const targetId = searchRes[0].id;
+
+                // 2. Extraemos el flujo de audio (con el nuevo motor de triple salto)
+                const streamData = await getVideoStreams(targetId);
+
+                // 3. Fusionamos: Look de Spotify + Audio de YouTube
+                const hybridTrack = {
+                    ...searchRes[0],
+                    title: track.title,
+                    uploader: track.uploader,
+                    thumbnail: track.thumbnail
+                };
+                loadVideo(hybridTrack, streamData);
+            } else {
+                addToast("Audio no disponible en la red.", "error");
             }
-        } else {
-            loadVideo(track, null);
-            addToast(`Sintonizando: ${track.title}`, "info");
+        } catch (e) {
+            addToast("Fallo en la extracción del flujo.", "error");
         }
     };
 

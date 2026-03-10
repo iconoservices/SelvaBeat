@@ -19,7 +19,6 @@ export const useAudioEngine = () => {
 
     const videoRef = useRef(null);
     const [storedTime, setStoredTime] = useState(0);
-    const [useEmbedFallback, setUseEmbedFallback] = useState(false);
     const [playbackTimeout, setPlaybackTimeout] = useState(null);
     const addToast = useToastStore(state => state.addToast);
 
@@ -36,8 +35,6 @@ export const useAudioEngine = () => {
     useEffect(() => {
         if (!videoData?.id) return;
 
-        // Reset Total
-        setUseEmbedFallback(false);
         setLoading(true);
 
         const bootstrapTrack = async () => {
@@ -78,45 +75,16 @@ export const useAudioEngine = () => {
     }, [videoData?.id]);
 
     /**
-     * �️ FASE 2: Selección de Fuente (Híbrida)
+     * ️ FASE 2: Selección de Fuente (Híbrida)
      */
     const source = useMemo(() => {
         if (isOfflineMode && blobUrl) return { type: 'local', url: blobUrl };
-
-        if (useEmbedFallback && videoData?.id) {
-            // URL Clásica (Más permisiva para LocalDev)
-            const url = new URL(`https://www.youtube.com/embed/${videoData.id}`);
-            url.searchParams.set('autoplay', '1');
-            url.searchParams.set('mute', '1');
-            url.searchParams.set('rel', '0');
-            url.searchParams.set('origin', window.location.origin);
-            return { type: 'embed', url: url.toString() };
-        }
-
         if (streams?.workerUrl) return { type: 'direct', url: streams.workerUrl };
-
         return null;
-    }, [videoData?.id, streams, isOfflineMode, blobUrl, useEmbedFallback]);
+    }, [videoData?.id, streams, isOfflineMode, blobUrl]);
 
     /**
-     * � FASE 3: Watchdog (Paciencia de 7 segundos)
-     */
-    useEffect(() => {
-        if (!videoData?.id || streams || isOfflineMode || useEmbedFallback) return;
-
-        const timer = setTimeout(() => {
-            if (!streams && !isOfflineMode) {
-                console.error("🚨 Rescate: Tiempo de espera agotado. Activando YouTube Embed.");
-                setUseEmbedFallback(true);
-                setLoading(false);
-            }
-        }, 7000);
-
-        return () => clearTimeout(timer);
-    }, [videoData?.id, streams, isOfflineMode, useEmbedFallback]);
-
-    /**
-     * � FASE 4: Sincronización del Elemento Media
+     *  FASE 4: Sincronización del Elemento Media
      */
     useEffect(() => {
         if (source?.type !== 'embed' && source?.url && videoRef.current) {
@@ -167,7 +135,8 @@ export const useAudioEngine = () => {
             setAudioMetrics(e.target.currentTime, e.target.duration);
         },
         handleError: () => {
-            setUseEmbedFallback(true);
+            setLoading(false);
+            console.error("🚨 Error crítico en audio.");
         },
         cleanRAM
     };

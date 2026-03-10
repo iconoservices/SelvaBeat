@@ -26,7 +26,7 @@ const FloatingPlayer = () => {
     const [isDownloading, setIsDownloading] = useState(false);
 
     // Conectamos al Motor Global
-    const { videoRef, handleMetadataLoaded, handleTimeUpdate, handleError, cleanRAM, isEmbed, embedUrl } = useAudioEngine();
+    const { videoRef, handleMetadataLoaded, handleTimeUpdate, handleError, cleanRAM } = useAudioEngine();
 
     const handleDownload = async () => {
         if (!storageFree) {
@@ -78,11 +78,8 @@ const FloatingPlayer = () => {
                     <ChevronDown size={24} />
                 </button>
                 <div className="text-center flex-1 px-4">
-                    <p className={`text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1 rounded-full border inline-block ${isOfflineMode ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                        isEmbed ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
-                            'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        }`}>
-                        {isOfflineMode ? 'Bóveda Offline 🔋' : isEmbed ? 'Modo Rescate 🛡️' : 'InocoOS Activo 📡'}
+                    <p className={`text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1 rounded-full border inline-block ${isOfflineMode ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
+                        {isOfflineMode ? 'Bóveda Offline 🔋' : 'InocoOS Activo 📡'}
                     </p>
                     <p className="text-[10px] font-bold truncate max-w-[200px] mx-auto text-white/30 uppercase mt-2 tracking-tighter">{videoData.title}</p>
                 </div>
@@ -100,37 +97,25 @@ const FloatingPlayer = () => {
                     alt="bg-blur"
                 />
 
-                {!isEmbed ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                        {/* VIDEO NATIVO (Visible ahora!) */}
-                        <video
-                            ref={videoRef}
-                            onLoadedMetadata={handleMetadataLoaded}
-                            onTimeUpdate={handleTimeUpdate}
-                            onError={handleError}
-                            className={`w-full h-full object-contain z-10 transition-opacity duration-700 ${isPlaying ? 'opacity-100' : 'opacity-40'}`}
-                            playsInline
+                <div className="relative w-full h-full flex items-center justify-center">
+                    {/* VIDEO NATIVO (Visible ahora!) */}
+                    <video
+                        ref={videoRef}
+                        onLoadedMetadata={handleMetadataLoaded}
+                        onTimeUpdate={handleTimeUpdate}
+                        onError={handleError}
+                        className={`w-full h-full object-contain z-10 transition-opacity duration-700 ${isPlaying ? 'opacity-100' : 'opacity-40'}`}
+                        playsInline
+                    />
+                    {/* Portada de Respaldo mientras carga */}
+                    {isLoading && (
+                        <img
+                            src={videoData.thumbnail}
+                            className="absolute inset-0 w-full h-full object-cover z-0"
+                            alt="preview"
                         />
-                        {/* Portada de Respaldo mientras carga */}
-                        {isLoading && (
-                            <img
-                                src={videoData.thumbnail}
-                                className="absolute inset-0 w-full h-full object-cover z-0"
-                                alt="preview"
-                            />
-                        )}
-                    </div>
-                ) : (
-                    /* MODO RESCATE: IFRAME DE YOUTUBE (v3.9.3) */
-                    <div className="relative w-full h-full z-20 bg-black">
-                        <iframe
-                            src={`${embedUrl}&controls=1&mute=0&rel=0&showinfo=0`}
-                            className="w-full h-full border-0 pointer-events-auto"
-                            allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            title="Rescue Stream"
-                        />
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* CONTROLES Y METADATA */}
@@ -142,20 +127,18 @@ const FloatingPlayer = () => {
 
                 <div className="w-full space-y-8">
                     {/* Barra de Progreso */}
-                    {!isEmbed && (
-                        <div className="w-full space-y-3">
-                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/5">
-                                <div
-                                    className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all ease-linear"
-                                    style={{ width: `${(currentTime / duration) * 100}%` }}
-                                />
-                            </div>
-                            <div className="flex justify-between text-[10px] font-mono text-gray-400 font-bold">
-                                <span>{Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, '0')}</span>
-                                <span>{Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, '0')}</span>
-                            </div>
+                    <div className="w-full space-y-3">
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/5">
+                            <div
+                                className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all ease-linear"
+                                style={{ width: `${(currentTime / duration) * 100}%` }}
+                            />
                         </div>
-                    )}
+                        <div className="flex justify-between text-[10px] font-mono text-gray-400 font-bold">
+                            <span>{Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, '0')}</span>
+                            <span>{Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, '0')}</span>
+                        </div>
+                    </div>
 
                     {/* Mandos de Reproducción */}
                     <div className="flex items-center justify-around">
@@ -174,8 +157,8 @@ const FloatingPlayer = () => {
                 <div className="grid grid-cols-4 gap-4 pb-8 border-t border-emerald-500/10 pt-8">
                     <button
                         onClick={handleDownload}
-                        disabled={isDownloading || isOfflineMode || isEmbed}
-                        className={`flex flex-col items-center gap-2 group ${(isDownloading || isOfflineMode || isEmbed) ? 'opacity-20' : ''}`}
+                        disabled={isDownloading || isOfflineMode}
+                        className={`flex flex-col items-center gap-2 group ${(isDownloading || isOfflineMode) ? 'opacity-20' : ''}`}
                     >
                         <div className={`p-4 rounded-[1.5rem] transition-all active:scale-90 flex items-center justify-center ${isDownloading || isOfflineMode ? 'bg-emerald-500 text-black' : 'bg-emerald-950/20 border border-emerald-500/10 group-hover:bg-emerald-500/20'}`}>
                             {isDownloading ? <Loader2 size={22} className="animate-spin text-black" /> : <Download size={22} />}

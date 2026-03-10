@@ -24,25 +24,58 @@ const normalizeTrack = (raw) => ({
 });
 
 /**
- * Obtiene el stream de audio directo desde el Worker (vía Cobalt).
+ * Obtiene el stream de audio directo (Resiliencia de Triple Capa: Worker -> Mirror 1 -> Mirror 2)
  */
 export const getVideoStreams = async (videoId) => {
-    try {
-        const workerUrl = `${INOCOOS_BASE_URL}/beat/stream?v=${videoId}`;
-        const res = await fetch(workerUrl, { headers: getHeaders() });
+    const methods = [
+        // 1. Worker Soberano de JuanMa (Pre-sanitizado)
+        async () => {
+            const res = await fetch(`${INOCOOS_BASE_URL}/beat/stream?v=${videoId}`, { headers: getHeaders() });
+            const text = await res.text();
+            try {
+                const data = JSON.parse(text);
+                const url = data.url || data.data?.url || (data.audio && data.audio[0]?.url);
+                if (!url) throw new Error("NO_URL");
+                return { workerUrl: url };
+            } catch (e) { throw new Error("INVALID_JSON_WORKER"); }
+        },
 
-        if (!res.ok) throw new Error(`HTTP_${res.status}`);
+        // 2. Mirror de Emergencia: Cobalt (Q-O PRO)
+        async () => {
+            const res = await fetch("https://cobalt.q-o.pro/api/json", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({ url: `https://www.youtube.com/watch?v=${videoId}`, isAudioOnly: true })
+            });
+            const data = await res.json();
+            if (data.url) return { workerUrl: data.url };
+            throw new Error("MIRROR_1_FAIL");
+        },
 
-        const data = await res.json();
-        const streamUrl = data.url || data.data?.url || (data.audio && data.audio[0]?.url);
+        // 3. Nodo de Rescate Final: Cobalt (WUK)
+        async () => {
+            const res = await fetch("https://co.wuk.sh/api/json", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({ url: `https://www.youtube.com/watch?v=${videoId}`, isAudioOnly: true })
+            });
+            const data = await res.json();
+            if (data.url) return { workerUrl: data.url };
+            throw new Error("MIRROR_2_FAIL");
+        }
+    ];
 
-        if (!streamUrl) throw new Error("NO_STREAM_URL");
-
-        return { workerUrl: streamUrl };
-    } catch (error) {
-        console.error("🚨 Error obteniendo stream:", error);
-        throw error;
+    for (const fetchMethod of methods) {
+        try {
+            const stream = await fetchMethod();
+            console.log("💎 Sintonía lograda.");
+            return stream;
+        } catch (e) {
+            console.warn("🔻 Nodo caído, re-intentando por ruta alterna...");
+        }
     }
+
+    throw new Error("RADAR_TOTAL_LOSS");
 };
 
 /**

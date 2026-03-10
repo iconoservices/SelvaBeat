@@ -28,7 +28,7 @@ const TrackCard = ({ track, onPlay }) => {
             className={`group relative bg-white/5 border ${isDownloaded ? 'border-emerald-500/50 shadow-emerald-500/10' : 'border-white/5'} rounded-3xl overflow-hidden active:scale-95 transition-all cursor-pointer hover:bg-white/10 hover:border-emerald-500/20 hover:shadow-2xl shadow-black/80 ring-1 ring-white/5`}
         >
             {/* THUMBNAIL */}
-            <div className={`relative ${track.isHybrid ? 'aspect-square' : 'aspect-video'} overflow-hidden`}>
+            <div className="relative aspect-square overflow-hidden transform-gpu">
                 <img
                     src={track.thumbnail}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"

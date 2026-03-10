@@ -36,24 +36,30 @@ const SearchPage = () => {
     };
 
     const handlePlay = async (track) => {
-        if (track.isHybrid) {
-            addToast("Sintonizando Radar Híbrido...", "info");
-            // Resolver ID real en YouTube usando the background query
-            const res = await searchVideos(track.hybridQuery);
+        addToast("Sintonizando...", "info");
+        try {
+            const { searchVideos, getVideoStreams } = await import('@/api/youtubeService');
+
+            // Si es híbrido (Apple), buscamos el video match en YouTube
+            const query = track.isHybrid ? (track.hybridQuery || `${track.title} ${track.uploader} official audio`) : track.title;
+            const res = await searchVideos(query);
+
             if (res && res.length > 0) {
-                // Preservar la metadata ultra-limpia (Cover 4K original y Título)
-                const realTrack = {
+                const targetId = res[0].id;
+                const streamData = await getVideoStreams(targetId);
+
+                const finalTrack = {
                     ...res[0],
                     title: track.title,
                     uploader: track.uploader,
                     thumbnail: track.thumbnail
                 };
-                loadVideo(realTrack, null);
+                loadVideo(finalTrack, streamData);
             } else {
-                addToast("No se pudo extraer audio oficial.", "error");
+                addToast("Audio no encontrado.", "error");
             }
-        } else {
-            loadVideo(track, null);
+        } catch (e) {
+            addToast("Error de conexión con la red.", "error");
         }
     };
 
