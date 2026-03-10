@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { usePlayerStore } from '@/store/usePlayerStore';
-import { searchVideos } from '@/api/youtubeService';
+import { searchVideos, searchCleanCatalog } from '@/api/youtubeService';
 import { useToastStore } from '@/store/useToastStore';
-import { Search as SearchIcon, Play, Music, Loader2, Info } from 'lucide-react';
+import { Search as SearchIcon, Play, Music, Loader2, Info, Radio } from 'lucide-react';
 import TrackCard from '@/components/TrackCard';
 
 /**
- * 🔍 SearchPage v4.2.0 - "Radar de la Selva"
+ * 🔍 SearchPage v5.1.0 - "Dual Radar System"
  */
 const SearchPage = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [radar, setRadar] = useState('clean'); // 'clean' o 'dirty'
     const { loadVideo } = usePlayerStore();
     const addToast = useToastStore(state => state.addToast);
 
@@ -21,7 +22,10 @@ const SearchPage = () => {
 
         try {
             setLoading(true);
-            const data = await searchVideos(query);
+            const data = radar === 'clean'
+                ? await searchCleanCatalog(query)
+                : await searchVideos(query);
+
             setResults(data);
             if (data.length === 0) addToast("No se encontraron rastros en la selva.", "info");
         } catch (error) {
@@ -31,25 +35,65 @@ const SearchPage = () => {
         }
     };
 
+    const handlePlay = async (track) => {
+        if (track.isHybrid) {
+            addToast("Sintonizando Radar Híbrido...", "info");
+            // Resolver ID real en YouTube usando the background query
+            const res = await searchVideos(track.hybridQuery);
+            if (res && res.length > 0) {
+                // Preservar la metadata ultra-limpia (Cover 4K original y Título)
+                const realTrack = {
+                    ...res[0],
+                    title: track.title,
+                    uploader: track.uploader,
+                    thumbnail: track.thumbnail
+                };
+                loadVideo(realTrack, null);
+            } else {
+                addToast("No se pudo extraer audio oficial.", "error");
+            }
+        } else {
+            loadVideo(track, null);
+        }
+    };
+
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-            {/* Barra de Búsqueda Premium */}
-            <div className="relative">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+            {/* Cabecera y Selector de Radares */}
+            <div className="px-5 pt-8">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-black text-white">Radar</h2>
+                    <div className="flex bg-white/5 border border-white/10 rounded-full p-1 h-9">
+                        <button
+                            onClick={() => setRadar('clean')}
+                            className={`px-4 text-[10px] font-black uppercase tracking-widest rounded-full transition-all ${radar === 'clean' ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-white/40 hover:text-white'}`}
+                        >
+                            Catálogo Pro
+                        </button>
+                        <button
+                            onClick={() => setRadar('dirty')}
+                            className={`px-4 text-[10px] font-black uppercase tracking-widest rounded-full transition-all flex items-center gap-1 ${radar === 'dirty' ? 'bg-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.3)]' : 'text-white/40 hover:text-white'}`}
+                        >
+                            <Radio size={12} /> Salvaje
+                        </button>
+                    </div>
+                </div>
+
                 <form onSubmit={handleSearch} className="relative group">
-                    <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-emerald-500 transition-colors">
+                    <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-[var(--active-color)] transition-colors" style={{ '--active-color': radar === 'clean' ? '#10b981' : '#f97316' }}>
                         <SearchIcon size={20} />
                     </div>
                     <input
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Buscar en la selva..."
-                        className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-5 pl-14 pr-6 text-sm font-bold focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all placeholder:text-white/20"
+                        placeholder={radar === 'clean' ? "Buscar artistas, música oficial..." : "Buscar mixes, podcasts, covers..."}
+                        className="w-full bg-white/5 border border-white/5 rounded-[2rem] py-5 pl-14 pr-6 text-sm font-bold focus:outline-none focus:bg-white/10 transition-all placeholder:text-white/20"
                     />
                     <button
                         type="submit"
                         disabled={loading}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-500 text-black px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest active:scale-90 transition-all disabled:opacity-50"
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 text-black px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest active:scale-90 transition-all disabled:opacity-50 ${radar === 'clean' ? 'bg-emerald-500' : 'bg-orange-500'}`}
                     >
                         {loading ? <Loader2 className="animate-spin" size={16} /> : 'Rastrear'}
                     </button>
@@ -57,14 +101,14 @@ const SearchPage = () => {
             </div>
 
             {/* Resultados */}
-            <div className="space-y-6">
+            <div className="px-5 space-y-6">
                 {results.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                         {results.map((track) => (
                             <TrackCard
                                 key={track.id}
                                 track={track}
-                                onPlay={() => loadVideo(track, null)}
+                                onPlay={() => handlePlay(track)}
                             />
                         ))}
                     </div>
@@ -73,7 +117,9 @@ const SearchPage = () => {
                         <div className="p-8 bg-white/5 rounded-[3rem] mb-4">
                             <SearchIcon size={48} />
                         </div>
-                        <p className="text-[10px] uppercase font-black tracking-[0.4em]">Introduce tu búsqueda</p>
+                        <p className="text-[10px] uppercase font-black tracking-[0.4em] text-center max-w-[200px]">
+                            {radar === 'clean' ? "RADAR GLOBAL: SOLO EDICIONES DE ESTUDIO OFICIALES" : "RADAR SALVAJE: MODO YOUTUBE SIN CENSURA"}
+                        </p>
                     </div>
                 )}
             </div>

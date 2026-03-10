@@ -62,6 +62,31 @@ export const searchVideos = async (query) => {
 };
 
 /**
+ * Radar Híbrido (Catálogo Limpio Apple -> YouTube Extractor)
+ * Busca música oficial en Apple Music para evitar mixes y basura visual.
+ */
+export const searchCleanCatalog = async (query) => {
+    try {
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=24`;
+        const res = await fetch(url);
+        if (!res.ok) return [];
+
+        const data = await res.json();
+        return data.results.map(track => ({
+            id: `HYBRID_${track.trackId}`, // Marcador especial
+            hybridQuery: `${track.artistName} ${track.trackName} official audio`,
+            title: track.trackName,
+            uploader: track.artistName,
+            thumbnail: track.artworkUrl100 ? track.artworkUrl100.replace('100x100bb', '600x600bb') : '',
+            duration: track.trackTimeMillis ? Math.floor(track.trackTimeMillis / 1000) : 0,
+            isHybrid: true
+        }));
+    } catch (e) {
+        return [];
+    }
+};
+
+/**
  * Obtiene las tendencias a través del Worker Maestro (Titanium Scraper v1.4)
  */
 export const getTrending = async (region = 'PE') => {
