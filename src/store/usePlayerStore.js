@@ -35,7 +35,9 @@ export const usePlayerStore = create((set) => ({
         streams: streams,
         isPlaying: true,
         isMinimized: false,
-        isLoading: false
+        isLoading: false,
+        currentTime: 0,
+        duration: 0
     }),
 
     setPlaying: (status) => set({ isPlaying: status }),

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { usePlayerStore } from '@/store/usePlayerStore';
-import { getTrending } from '@/api/youtubeService';
+import { getTrending } from '@/api/musicService';
 import { useToastStore } from '@/store/useToastStore';
 import { Play, Sparkles, Flame, Bell, ChevronRight } from 'lucide-react';
 import TrackCard from '@/components/TrackCard';
@@ -42,7 +42,7 @@ const Home = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const { searchCleanCatalog } = await import('@/api/youtubeService');
+                const { searchCleanCatalog } = await import('@/api/musicService');
 
                 // 📡 Triple Escaneo de Catálogo Oficial (Apple Music Core)
                 const [estreno, latino, fiesta] = await Promise.all([
@@ -51,12 +51,12 @@ const Home = () => {
                     searchCleanCatalog('perreo 2024 reggaeton oficial')
                 ]);
 
-                // Filtro de Seguridad (Anti-Mixes)
+                // Filtro de Seguridad (Anti-Mixes y Videos Largos)
                 const isGarbage = (t) => t.duration > 480 || t.title.toLowerCase().includes('mix');
 
                 setTracks([...estreno, ...latino, ...fiesta].filter(t => !isGarbage(t)).slice(0, 32));
             } catch (e) {
-                addToast("Error al sintonizar radar oficial.", "error");
+                addToast("Error al sintonizar catálogo oficial.", "error");
             } finally {
                 setLoading(false);
             }
@@ -65,19 +65,19 @@ const Home = () => {
     }, [addToast]);
 
     const handlePlay = async (track) => {
-        addToast("Sintonizando Radar Híbrido...", "info");
+        addToast("Sintonizando...", "info");
         try {
-            const { searchVideos, getVideoStreams } = await import('@/api/youtubeService');
+            const { searchInternal, getVideoStreams } = await import('@/api/musicService');
 
-            // 1. Resolvemos el ID de YouTube por debajo de la mesa
-            const searchRes = await searchVideos(track.hybridQuery || `${track.title} ${track.uploader} official audio`);
+            // 1. Resolvemos la sintonía por debajo de la mesa
+            const searchRes = await searchInternal(track.hybridQuery || `${track.title} ${track.uploader} official audio`);
             if (searchRes && searchRes.length > 0) {
                 const targetId = searchRes[0].id;
 
-                // 2. Extraemos el flujo de audio (con el nuevo motor de triple salto)
+                // 2. Extraemos el flujo de audio soberano
                 const streamData = await getVideoStreams(targetId);
 
-                // 3. Fusionamos: Look de Spotify + Audio de YouTube
+                // 3. Fusionamos: Look Premium + Audio Soberano
                 const hybridTrack = {
                     ...searchRes[0],
                     title: track.title,
@@ -86,10 +86,10 @@ const Home = () => {
                 };
                 loadVideo(hybridTrack, streamData);
             } else {
-                addToast("Audio no disponible en la red.", "error");
+                addToast("Audio no disponible.", "error");
             }
         } catch (e) {
-            addToast("Fallo en la extracción del flujo.", "error");
+            addToast("Fallo en la sintonía del flujo.", "error");
         }
     };
 

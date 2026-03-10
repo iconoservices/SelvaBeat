@@ -18,7 +18,7 @@ export default defineConfig({
                 navigateFallback: '/index.html'
             },
             manifest: {
-                name: 'SelvaBeat Premium',
+                name: 'SelvaBeat Pro',
                 short_name: 'SelvaBeat',
                 description: 'Música soberana sin límites.',
                 theme_color: '#10b981',

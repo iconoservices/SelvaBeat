@@ -13,7 +13,7 @@ import Library from '@/pages/Library'
 import SearchPage from '@/pages/SearchPage'
 
 /**
- * 🌴 SelvaBeat App v5.0.0 - "Sinfonía Midnight"
+ * 🌴 SelvaBeat Pro v6.0.0 - "Esencia Apple & Spotify"
  */
 function App() {
     const systemStatus = usePlayerStore(state => state.systemStatus);

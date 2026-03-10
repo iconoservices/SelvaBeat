@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { offlineDB } from '@/utils/db';
-import { getVideoStreams } from '@/api/youtubeService';
+import { getVideoStreams } from '@/api/musicService';
 import { useToastStore } from '@/store/useToastStore';
 
 /**

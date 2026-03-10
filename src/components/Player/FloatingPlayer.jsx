@@ -1,62 +1,94 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { usePlayerStore } from '@/store/usePlayerStore';
 import { useAudioEngine } from '@/hooks/useAudioEngine';
 import { offlineDB } from '@/utils/db';
+import ReactPlayer from 'react-player';
 import {
     Play, Pause, ChevronDown, X, SkipForward, SkipBack,
-    Maximize2, Download, Share, Music, Loader2, RefreshCcw, Volume2
+    Maximize2, Download, Share, Music, Loader2, RefreshCcw
 } from 'lucide-react';
 import { useToastStore } from '@/store/useToastStore';
 
 /**
- * FloatingPlayer - Versión 1.3.0 (Cine en la Selva)
- * 
- * FIX CRÍTICO: El video nativo ya no está oculto. Se ha integrado 
- * en el "Escenario" para que el usuario pueda ver el contenido
- * real de Piped/Google.
+ * FloatingPlayer v6.0.0 (Pure Music Experience)
+ * Audio nativo perfecto a través de puente cero-CORS. 
+ * Sin parches, sin vistas de youtube rotas.
  */
 const FloatingPlayer = () => {
     const {
         videoData, streams, isPlaying, isMinimized, isLoading,
         togglePlaying, setIsMinimized, closePlayer, setLoading,
-        storageFree, currentTime, duration, isOfflineMode
+        storageFree, currentTime, duration, isOfflineMode, setPlaying
     } = usePlayerStore();
 
     const addToast = useToastStore(state => state.addToast);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    // Conectamos al Motor Global
-    const { videoRef, handleMetadataLoaded, handleTimeUpdate, handleError, cleanRAM } = useAudioEngine();
+    // Motor puro
+    const { handleTimeUpdate, setAudioDuration, cleanRAM, source } = useAudioEngine();
+    // Debug: log source changes
+    useEffect(() => {
+        console.log('🔎 source:', source);
+    }, [source]);
+    const playerRef = useRef(null);
 
     const handleDownload = async () => {
-        if (!storageFree) {
-            addToast("Espacio insuficiente en disco.", "error");
-            return;
-        }
-        try {
-            setIsDownloading(true);
-            const audioStream = streams.audioStreams?.find(s => s.mimeType.includes('audio')) || streams.audioStreams?.[0];
-            const res = await fetch(audioStream.url);
-            const blob = await res.blob();
-            await offlineDB.save(videoData.id, blob, {
-                title: videoData.title,
-                uploader: videoData.uploader,
-                thumbnail: videoData.thumbnail
-            });
-            addToast("Cosecha Offline Exitosa 🥥", "success");
-        } catch (e) {
-            addToast("Fallo en la extracción offline.", "error");
-        } finally {
-            setIsDownloading(false);
-        }
+        addToast("Bóveda bloqueada por DRM oficial.", "error");
     };
 
     if (!videoData) return null;
 
+    // Calculo del ancho de la barra
+    const progressWidth = duration > 0 ? (currentTime / duration) * 100 : 0;
+
     return (
         <div className={`fixed inset-0 bg-black z-[1000] flex flex-col transition-all duration-500 overflow-hidden ${isMinimized ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
 
-            {/* HUD de Carga InocoOS */}
+            {/* Puente Secreto de Audio — en viewport pero imperceptible */}
+            <div style={{ position: 'fixed', bottom: '0', right: '0', width: '1px', height: '1px', opacity: '0.01', overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+                {source && source.type === 'youtube' && (
+                    <ReactPlayer
+                        ref={playerRef}
+                        url={source.url}
+                        playing={isPlaying}
+                        controls={false}
+                        width="320px"
+                        height="180px"
+                        volume={1}
+                        onProgress={(state) => handleTimeUpdate(state.playedSeconds)}
+                        onDuration={(dur) => setAudioDuration(dur)}
+                        onReady={() => setLoading(false)}
+                        onBuffer={() => setLoading(true)}
+                        onBufferEnd={() => setLoading(false)}
+                        onError={(e) => {
+                            console.error("🚨 Error Crítico de Audio:", e);
+                            addToast("Fallo en la sintonía. Intenta otra canción.", "error");
+                        }}
+                        config={{
+                            youtube: {
+                                playerVars: {
+                                    showinfo: 0,
+                                    modestbranding: 1,
+                                    rel: 0,
+                                    disablekb: 1,
+                                    iv_load_policy: 3,
+                                    autoplay: 1
+                                }
+                            }
+                        }}
+                    />
+                )}
+                {source && source.type === 'local' && (
+                    <audio
+                        src={source.url}
+                        autoPlay
+                        onTimeUpdate={(e) => handleTimeUpdate(e.target.currentTime)}
+                        onLoadedMetadata={(e) => setAudioDuration(e.target.duration)}
+                    />
+                )}
+            </div>
+
+            {/* HUD de Carga Pro */}
             {isLoading && (
                 <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-3xl">
                     <div className="flex flex-col items-center gap-4">
@@ -65,8 +97,7 @@ const FloatingPlayer = () => {
                             <RefreshCcw className="animate-spin text-emerald-500 relative z-10" size={48} />
                         </div>
                         <div className="text-center">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500 block mb-1">Negociando InocoOS</span>
-                            <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest animate-pulse">Capa de Red Soberana v3.7</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500 block mb-1">Decodificando</span>
                         </div>
                     </div>
                 </div>
@@ -78,8 +109,8 @@ const FloatingPlayer = () => {
                     <ChevronDown size={24} />
                 </button>
                 <div className="text-center flex-1 px-4">
-                    <p className={`text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1 rounded-full border inline-block ${isOfflineMode ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
-                        {isOfflineMode ? 'Bóveda Offline 🔋' : 'InocoOS Activo 📡'}
+                    <p className="text-[9px] uppercase tracking-[0.2em] font-black px-3 py-1 rounded-full border inline-block bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
+                        {isOfflineMode ? 'Bóveda Offline 🔋' : 'Sintonía Activa 📡'}
                     </p>
                     <p className="text-[10px] font-bold truncate max-w-[200px] mx-auto text-white/30 uppercase mt-2 tracking-tighter">{videoData.title}</p>
                 </div>
@@ -88,50 +119,37 @@ const FloatingPlayer = () => {
                 </button>
             </div>
 
-            {/* ESCENARIO VISUAL (El Cine) */}
-            <div className="w-full aspect-video mt-16 shadow-2xl relative bg-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5">
-                {/* Fondo dinámico */}
+            {/* ESCENARIO VISUAL (Solo Portada HQ) */}
+            <div className="w-full aspect-square md:aspect-video mt-16 shadow-2xl relative bg-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5 p-10">
                 <img
                     src={videoData.thumbnail}
                     className="w-full h-full object-cover blur-3xl opacity-20 absolute inset-0 scale-150"
                     alt="bg-blur"
                 />
 
-                <div className="relative w-full h-full flex items-center justify-center">
-                    {/* VIDEO NATIVO (Visible ahora!) */}
-                    <video
-                        ref={videoRef}
-                        onLoadedMetadata={handleMetadataLoaded}
-                        onTimeUpdate={handleTimeUpdate}
-                        onError={handleError}
-                        className={`w-full h-full object-contain z-10 transition-opacity duration-700 ${isPlaying ? 'opacity-100' : 'opacity-40'}`}
-                        playsInline
+                <div className="relative w-full h-full max-w-[400px] mx-auto flex items-center justify-center rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+                    <img
+                        src={videoData.thumbnail}
+                        className="w-full h-full object-cover z-10 transition-opacity duration-700"
+                        alt="artwork"
                     />
-                    {/* Portada de Respaldo mientras carga */}
-                    {isLoading && (
-                        <img
-                            src={videoData.thumbnail}
-                            className="absolute inset-0 w-full h-full object-cover z-0"
-                            alt="preview"
-                        />
-                    )}
                 </div>
             </div>
 
             {/* CONTROLES Y METADATA */}
             <div className="flex-1 flex flex-col p-8 justify-between bg-black/80">
                 <div>
-                    <h2 className="text-2xl font-black leading-tight mb-2 uppercase tracking-tighter text-white">{videoData.title}</h2>
-                    <p className="text-emerald-500 font-bold uppercase text-[10px] tracking-wider">{videoData.uploader}</p>
+                    <h2 className="text-3xl font-black leading-tight mb-2 tracking-tighter text-white line-clamp-2">{videoData.title}</h2>
+                    <p className="text-emerald-500 font-bold uppercase text-[12px] tracking-wider">{videoData.uploader}</p>
                 </div>
 
                 <div className="w-full space-y-8">
                     {/* Barra de Progreso */}
                     <div className="w-full space-y-3">
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/5">
+                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/5 cursor-pointer">
                             <div
                                 className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all ease-linear"
-                                style={{ width: `${(currentTime / duration) * 100}%` }}
+                                style={{ width: `${progressWidth}%` }}
                             />
                         </div>
                         <div className="flex justify-between text-[10px] font-mono text-gray-400 font-bold">
