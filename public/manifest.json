@@ -1,21 +1,22 @@
 {
-    "name": "SelvaBeat: Sonido Amazónico",
+    "name": "SelvaBeat Premium",
     "short_name": "SelvaBeat",
-    "description": "Tu música favorita en el corazón de la selva.",
+    "description": "El clon soberano de SnapTube. Música directa del búnker.",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#000000",
+    "background_color": "#050505",
     "theme_color": "#10b981",
     "icons": [
         {
-            "src": "/icon_192.png",
+            "src": "pwa-icon-192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/icon_512.png",
+            "src": "pwa-icon.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ]
 }

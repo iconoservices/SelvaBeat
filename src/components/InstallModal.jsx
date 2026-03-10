@@ -100,49 +100,55 @@ const InstallModal = () => {
     if (!isVisible) return null;
 
     return (
-        <div className="fixed bottom-24 left-4 right-4 z-[100] animate-in slide-in-from-bottom-full duration-500">
-            <div className="bg-surface/95 backdrop-blur-xl border border-white/10 p-6 rounded-3xl shadow-2xl relative overflow-hidden">
-                {/* Glow de fondo */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 blur-3xl rounded-full"></div>
+        <div className="fixed bottom-28 left-6 right-6 z-[100] animate-in slide-in-from-bottom-full duration-700">
+            <div className="glass-card p-6 rounded-[2.5rem] premium-shadow relative overflow-hidden ring-1 ring-white/10">
+                {/* Glow decorativo esmeralda */}
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full"></div>
 
                 <button
                     onClick={() => setIsVisible(false)}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-white"
+                    className="absolute top-5 right-5 text-white/20 hover:text-white transition-colors"
                 >
-                    <X size={20} />
+                    <X size={18} />
                 </button>
 
-                <div className="flex items-start gap-4">
-                    <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20 shrink-0">
-                        <Download className="text-white" size={24} />
+                <div className="flex flex-col gap-5">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-emerald-500 rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-500/20 rotate-3">
+                            <img src="/pwa-icon-192.png" className="w-10 h-10 object-contain inv-h" alt="logo" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-white leading-tight">SelvaBeat Pro</h3>
+                            <p className="text-[10px] text-emerald-500 font-black uppercase tracking-[0.2em]">Versión Soberana</p>
+                        </div>
                     </div>
 
-                    <div className="flex-1">
-                        <h3 className="text-lg font-bold text-white mb-1">SelvaBeat en tu pantalla</h3>
-                        <p className="text-gray-400 text-sm leading-tight mb-4">
-                            Instala el clon premium para acceder más rápido y ahorrar datos en la selva.
+                    <div className="space-y-3">
+                        <p className="text-white/60 text-sm leading-relaxed">
+                            ¿Cansado de ver sugerencias? Instala <span className="text-white font-bold">SelvaBeat Premium</span> para una navegación 100% limpia, ahorro de datos y acceso instantáneo.
                         </p>
 
                         {isIos ? (
-                            /* Guía Especial para iOS (Apple's Prison) */
-                            <div className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-2">
-                                <p className="text-[11px] text-primary font-bold uppercase tracking-wider">Instrucciones para iPhone:</p>
-                                <div className="flex items-center gap-2 text-xs text-gray-200">
-                                    <Share size={14} className="text-blue-400" />
-                                    <span>1. Toca el botón <b>Compartir</b></span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-200">
-                                    <PlusSquare size={14} className="text-gray-400" />
-                                    <span>2. Selecciona <b>Añadir a pantalla de inicio</b></span>
+                            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-3">
+                                <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest text-center">Protocolo iPhone</p>
+                                <div className="flex items-center justify-center gap-6">
+                                    <div className="flex flex-col items-center gap-1.5 opacity-60">
+                                        <Share size={18} className="text-white" />
+                                        <span className="text-[9px] font-bold">Compartir</span>
+                                    </div>
+                                    <div className="w-px h-6 bg-white/10"></div>
+                                    <div className="flex flex-col items-center gap-1.5">
+                                        <PlusSquare size={18} className="text-white" />
+                                        <span className="text-[9px] font-bold">A Inicio</span>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            /* Botón Nativo (Android/Chrome) */
                             <button
                                 onClick={handleInstallClick}
-                                className="w-full bg-white text-black font-black py-4 rounded-2xl active:scale-95 transition-transform shadow-lg"
+                                className="w-full bg-white text-black font-black py-4 rounded-2xl active:scale-95 transition-transform shadow-xl hover:bg-emerald-50 transition-colors"
                             >
-                                INSTALAR AHORA 🌴
+                                INSTALAR VERSIÓN PRO 🌴
                             </button>
                         )}
                     </div>
