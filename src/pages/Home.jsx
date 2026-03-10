@@ -42,16 +42,17 @@ const Home = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const trending = await getTrending();
-                const { searchVideos } = await import('@/api/youtubeService');
-                const discovery = await searchVideos('exitos musicales 2024 oficial');
+                // 1. Usar el Catálogo Pro directamente para el Home (Modo Spotify)
+                const { searchCleanCatalog } = await import('@/api/youtubeService');
+                const [hitsUrbanos, topLatino, artistasFlow] = await Promise.all([
+                    searchCleanCatalog('top hits latino 2024'),
+                    searchCleanCatalog('reggaeton 2024'),
+                    searchCleanCatalog('feid quevedo karol g')
+                ]);
 
                 // 🛸 El "Filtro Soberano" (Aniquilación de Mixes Mixta)
                 const isGarbage = (t) => {
-                    // 1. Filtrar por Duración (Si dura más de 8 minutos, es un mix sí o sí)
                     if (t.duration > 480) return true;
-
-                    // 2. Filtrar por Texto de Título
                     const blackList = [
                         'mix', 'completo', 'full album', '1 hour', 'envivo', 'reggaeton mix',
                         'variado', 'sesión', 'dj set', 'megamix', 'lo mejor de', 'recopilatorio',
@@ -61,7 +62,7 @@ const Home = () => {
                     return blackList.some(word => t.title.toLowerCase().includes(word));
                 };
 
-                const all = [...trending, ...discovery].filter(t => !isGarbage(t));
+                const all = [...hitsUrbanos, ...topLatino, ...artistasFlow].filter(t => !isGarbage(t));
 
                 // Unificador de IDs para evitar clones
                 const seen = new Set();
@@ -83,9 +84,31 @@ const Home = () => {
         fetchData();
     }, [addToast]);
 
-    const handlePlay = (track) => {
-        loadVideo(track, null);
-        addToast(`Sintonizando: ${track.title}`, "info");
+    const handlePlay = async (track) => {
+        if (track.isHybrid) {
+            addToast("Sintonizando Radar Híbrido...", "info");
+            try {
+                const { searchVideos } = await import('@/api/youtubeService');
+                const res = await searchVideos(track.hybridQuery);
+                if (res && res.length > 0) {
+                    // Preservar la metadata ultra-limpia (Cover HD original y Título de Apple)
+                    const realTrack = {
+                        ...res[0],
+                        title: track.title,
+                        uploader: track.uploader,
+                        thumbnail: track.thumbnail
+                    };
+                    loadVideo(realTrack, null);
+                } else {
+                    addToast("No se pudo extraer el audio matriz.", "error");
+                }
+            } catch (e) {
+                addToast("Error al conectar el puente de audio.", "error");
+            }
+        } else {
+            loadVideo(track, null);
+            addToast(`Sintonizando: ${track.title}`, "info");
+        }
     };
 
     if (loading && tracks.length === 0) {
